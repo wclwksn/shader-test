@@ -1,195 +1,231 @@
 import plainVertexShader from '../../shaders/plain.vert'
 
-export default class WebGl {
+export const plainAttribute = {
+  value: [
+    -1, 1, 0,
+    -1, -1, 0,
+    1, 1, 0,
+    1, -1, 0
+  ],
+  stride: 3
+}
+
+export default class Webgl {
   constructor (option) {
     const {
       canvas,
       vertexShader = plainVertexShader,
       fragmentShader,
+      attributes,
       uniforms,
       clearedColor,
-      mode = 'TRIANGLE_STRIP',
-      tick = () => {},
+      tick,
       onResize,
+      hasPlain = true,
       isAutoStart = true
     } = option
-    const isPlain = !option.vertexShader
 
     this.attributes = {}
     this.uniforms = {}
     this.textureIndexes = {}
-    this.attributeCount = 0
     this.textureIndex = -1
 
-    this.canvas = canvas
-    this.mode = mode
     this.tick = tick
     this.onResize = onResize
+    this.clearedColor = clearedColor
+    this.hasPlain = hasPlain
 
-    this.initWebGL()
+    this.initWebgl(canvas)
+
     this.createProgram(vertexShader, fragmentShader)
-    if (isPlain) this.createPlainAttribute()
+
+    if (hasPlain) this.createPlainAttribute()
+    else if (attributes) this.createAttribute(attributes)
+
     if (uniforms) this.createUniform(uniforms)
-    this.clearColor(clearedColor)
+
+    if (clearedColor) this.clearColor(clearedColor)
+
     this.initSize()
+
     if (isAutoStart) this.start()
   }
 
-  initWebGL () {
+  initWebgl (canvas) {
+    if (typeof canvas === 'string') {
+      this.canvas = document.querySelector(canvas)
+    } else if (typeof canvas === 'object' && canvas.constructor.name === 'HTMLCanvasElement') {
+      this.canvas = canvas
+    } else {
+      throw new Error(`Failed to set canvas.`)
+    }
+
     this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
   }
 
-  createShader (type, content) {
-    const shader = this.gl.createShader(this.gl[type])
-    this.gl.shaderSource(shader, content)
-    this.gl.compileShader(shader)
+  createProgram (vertexShader, fragmentShader) {
+    const { gl } = this
 
-    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      console.error(this.gl.getShaderInfoLog(shader))
+    this.program = gl.createProgram()
+    gl.attachShader(this.program, this.createShader('VERTEX_SHADER', vertexShader))
+    gl.attachShader(this.program, this.createShader('FRAGMENT_SHADER', fragmentShader))
+    gl.linkProgram(this.program)
+
+    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(this.program))
+      return
+    }
+
+    gl.useProgram(this.program)
+
+    if (!this.program) throw new Error('Failed to create this.program.')
+  }
+
+  createShader (type, content) {
+    const { gl } = this
+    const shader = gl.createShader(gl[type])
+
+    gl.shaderSource(shader, content)
+    gl.compileShader(shader)
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(shader))
       return
     }
 
     return shader
   }
 
-  createProgram (vertexShader, fragmentShader) {
-    this.program = this.gl.createProgram()
-    this.gl.attachShader(this.program, this.createShader('VERTEX_SHADER', vertexShader))
-    this.gl.attachShader(this.program, this.createShader('FRAGMENT_SHADER', fragmentShader))
-    this.gl.linkProgram(this.program)
-
-    if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
-      console.error(this.gl.getProgramInfoLog(this.program))
-      return
-    }
-
-    this.gl.useProgram(this.program)
-
-    if (!this.program) throw new Error('Failed to create this.program.')
-  }
-
   createAttribute (data) {
     Object.keys(data).forEach(key => {
-      const { stride, value } = data[key]
-      this.attributes[key] = {
-        location: this.gl.getAttribLocation(this.program, key),
-        stride,
-        vbo: this.createVbo(value)
-      }
+      const { value, stride } = data[key]
 
-      this.attributeCount += value.length / stride
+      this.addAttribute(key, value, stride)
     })
+  }
+
+  addAttribute (key, value, stride) {
+    const { gl } = this
+
+    this.attributes[key] = {
+      location: gl.getAttribLocation(this.program, key),
+      stride,
+      vbo: gl.createBuffer(),
+      count: value.length / stride
+    }
+
+    this.setAttribute(key, value)
+  }
+
+  setAttribute (key, value) {
+    const { gl } = this
+    const { location, stride, vbo } = this.attributes[key]
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(value), gl.STATIC_DRAW)
+    gl.enableVertexAttribArray(location)
+    gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
   }
 
   createPlainAttribute () {
-    const position = [
-      -1, 1, 0,
-      -1, -1, 0,
-      1, 1, 0,
-      1, -1, 0
-    ]
-
     this.createAttribute({
-      position: {
-        stride: 3,
-        value: position
-      }
+      position: plainAttribute
     })
-
-    this.setAttribute('position')
-  }
-
-  createVbo (data) {
-    const vbo = this.gl.createBuffer()
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo)
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(data), this.gl.STATIC_DRAW)
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null)
-    return vbo
-  }
-
-  setAttribute (name) {
-    const { vbo, location, stride } = this.attributes[name]
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vbo)
-    this.gl.enableVertexAttribArray(location)
-    this.gl.vertexAttribPointer(location, stride, this.gl.FLOAT, false, 0, 0)
-  }
-
-  addUniform (name, value, type) {
-    let uniformType = type
-    let uniformValue = value
-
-    if (type === 'image') {
-      uniformType = '1i'
-      uniformValue = this.createTexture(value, name)
-    }
-
-    this.uniforms[name] = {
-      location: this.gl.getUniformLocation(this.program, name),
-      type: `uniform${uniformType}`
-    }
-
-    if (typeof uniformValue !== 'undefined') this.setUniform(name, uniformValue)
   }
 
   createUniform (data) {
     const mergedData = Object.assign({
-      resolution: {
-        type: '2fv'
-      }
+      resolution: [0, 0]
     }, data)
 
-    Object.keys(mergedData).forEach(name => {
-      const { type, value } = mergedData[name]
-      this.addUniform(name, value, type)
+    Object.keys(mergedData).forEach(key => {
+      this.addUniform(key, mergedData[key])
     })
   }
 
-  setUniform (name, value) {
-    const uniform = this.uniforms[name]
-    if (!uniform) return
+  addUniform (key, value) {
+    const { gl } = this
+    let uniformType
+    let uniformValue = value
 
-    this.gl[uniform.type](uniform.location, value)
+    if (typeof value === 'number') {
+      uniformType = '1f'
+    } else if (typeof value === 'object') {
+      switch (value.constructor.name) {
+        case 'Array':
+          uniformType = `${value.length}fv`
+          break
+        case 'HTMLImageElement':
+          uniformType = '1i'
+          uniformValue = this.createTexture(value, key)
+          break
+      }
+    }
+
+    if (!uniformType) {
+      console.error(`Failed to add uniform "${key}".`)
+      return
+    }
+
+    this.uniforms[key] = {
+      location: gl.getUniformLocation(this.program, key),
+      type: `uniform${uniformType}`
+    }
+
+    if (typeof uniformValue !== 'undefined') this.setUniform(key, uniformValue)
   }
 
-  createTexture (img, name) {
-    const textureIndex = ++this.textureIndex
-    const texture = this.gl.createTexture()
-    this.textureIndexes[name] = textureIndex
+  setUniform (key, value) {
+    const { gl } = this
+    const uniform = this.uniforms[key]
+    if (!uniform) return
 
-    this.gl.activeTexture(this.gl[`TEXTURE${textureIndex}`])
-    this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
-    // this.gl.generateMipmap(this.gl.TEXTURE_2D)
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR)
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR)
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img)
+    gl[uniform.type](uniform.location, value)
+  }
+
+  createTexture (img, key) {
+    const { gl } = this
+    const textureIndex = ++this.textureIndex
+    const texture = gl.createTexture()
+    this.textureIndexes[key] = textureIndex
+
+    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    // gl.generateMipmap(gl.TEXTURE_2D)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
 
     return textureIndex
   }
 
-  getTextureIndex (name) {
-    return this.textureIndexes[name]
+  getTextureIndex (key) {
+    return this.textureIndexes[key]
   }
 
-  updateTexture (name, img) {
-    this.activeTexture(this.getTextureIndex(name))
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, img)
+  updateTexture (key, img) {
+    const { gl } = this
+
+    this.activeTexture(this.getTextureIndex(key))
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
   }
 
   clearColor (clearedColor = [0, 0, 0, 1]) {
-    this.gl.clearColor(...clearedColor)
+    const { gl } = this
+    gl.clearColor(...clearedColor)
   }
 
   setSize () {
+    const { gl } = this
     const width = this.canvas.clientWidth
     const height = this.canvas.clientHeight
 
     this.canvas.width = width
     this.canvas.height = height
 
-    this.gl.viewport(0, 0, width, height)
+    gl.viewport(0, 0, width, height)
     this.setUniform('resolution', [width, height])
 
     if (this.onResize) this.onResize()
@@ -201,18 +237,14 @@ export default class WebGl {
   }
 
   start () {
-    requestAnimationFrame(timestamp => {
-      this.initialTimestamp = timestamp
-    })
+    const { gl } = this
 
     const render = timestamp => {
-      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
+      if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      this.setUniform('time', (timestamp - this.initialTimestamp) / 1000)
+      if (this.tick) this.tick(timestamp)
 
-      this.tick(timestamp)
-
-      this.gl.drawArrays(this.gl[this.mode], 0, this.attributeCount)
+      if (this.hasPlain) gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.attributes.position.count)
 
       this.requestID = requestAnimationFrame(render)
     }
