@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "parcel smoke.html",
+    "dev": "parcel smoke.html --open",
     "build": "parcel build smoke.html"
   },
   "devDependencies": {

@@ -1,6 +1,8 @@
-import plainVertexShader from '../../shaders/plain.vert'
+import matIV from './minMatrix.js'
+import wholeVertexShader from '../../shaders/modules/whole.vert'
 
-export const plainAttribute = {
+const PI2 = Math.PI * 2
+const wholeAttribute = {
   value: [
     -1, 1, 0,
     -1, -1, 0,
@@ -9,76 +11,65 @@ export const plainAttribute = {
   ],
   stride: 3
 }
+let textureIndex = -1
 
-export default class Webgl {
-  constructor (option) {
-    const {
-      canvas,
-      vertexShader = plainVertexShader,
-      fragmentShader,
-      attributes,
-      uniforms,
-      clearedColor,
-      tick,
-      onResize,
-      hasPlain = true,
-      isAutoStart = true
-    } = option
-
+class Program {
+  constructor (gl, option) {
     this.attributes = {}
     this.uniforms = {}
     this.textureIndexes = {}
-    this.textureIndex = -1
 
-    this.tick = tick
-    this.onResize = onResize
-    this.clearedColor = clearedColor
-    this.hasPlain = hasPlain
+    const {
+      vertexShader = wholeVertexShader,
+      fragmentShader,
+      attributes,
+      uniforms,
+      mode = 'TRIANGLE_STRIP',
+      drawType = 'STATIC_DRAW',
+      hasResolution = true,
+      hasCamera = true,
+      hasLight = true,
+      hasTime = true
+    } = option
+    const isWhole = !option.vertexShader
 
-    this.initWebgl(canvas)
+    this.gl = gl
+    this.mode = mode
+    this.drawType = drawType
+    this.hasResolution = hasResolution
+    this.hasCamera = hasCamera
+    this.hasLight = hasLight
+    this.hasTime = hasTime
 
     this.createProgram(vertexShader, fragmentShader)
 
-    if (hasPlain) this.createPlainAttribute()
+    this.use()
+
+    if (isWhole) this.createWholeAttribute()
     else if (attributes) this.createAttribute(attributes)
 
     if (uniforms) this.createUniform(uniforms)
-
-    if (clearedColor) this.clearColor(clearedColor)
-
-    this.initSize()
-
-    if (isAutoStart) this.start()
-  }
-
-  initWebgl (canvas) {
-    if (typeof canvas === 'string') {
-      this.canvas = document.querySelector(canvas)
-    } else if (typeof canvas === 'object' && canvas.constructor.name === 'HTMLCanvasElement') {
-      this.canvas = canvas
-    } else {
-      throw new Error(`Failed to set canvas.`)
-    }
-
-    this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
   }
 
   createProgram (vertexShader, fragmentShader) {
     const { gl } = this
 
-    this.program = gl.createProgram()
-    gl.attachShader(this.program, this.createShader('VERTEX_SHADER', vertexShader))
-    gl.attachShader(this.program, this.createShader('FRAGMENT_SHADER', fragmentShader))
-    gl.linkProgram(this.program)
+    const program = gl.createProgram()
+    gl.attachShader(program, this.createShader('VERTEX_SHADER', vertexShader))
+    gl.attachShader(program, this.createShader('FRAGMENT_SHADER', fragmentShader))
+    gl.linkProgram(program)
 
-    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
-      console.error(gl.getProgramInfoLog(this.program))
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(program))
       return
     }
 
-    gl.useProgram(this.program)
+    if (!program) {
+      console.error(`Failed to create program "${key}".`)
+      return
+    }
 
-    if (!this.program) throw new Error('Failed to create this.program.')
+    this.program = program
   }
 
   createShader (type, content) {
@@ -106,37 +97,60 @@ export default class Webgl {
 
   addAttribute (key, value, stride) {
     const { gl } = this
-
-    this.attributes[key] = {
-      location: gl.getAttribLocation(this.program, key),
+    const location = gl.getAttribLocation(this.program, key)
+    const data = new Float32Array(value)
+    const attribute = this.attributes[key] = {
+      location,
       stride,
-      vbo: gl.createBuffer(),
+      data,
       count: value.length / stride
     }
 
-    this.setAttribute(key, value)
+    const vbo = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl[this.drawType])
+    attribute.vbo = vbo
   }
 
-  setAttribute (key, value) {
+  updateAttribute (key, index, value) {
     const { gl } = this
-    const { location, stride, vbo } = this.attributes[key]
+    const { location, stride, vbo, data } = this.attributes[key]
+
+    data[index] = value
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data)
+  }
+
+  setAttribute (key) {
+    const { gl } = this
+    const attribute = this.attributes[key]
+    const { location, stride, vbo } = attribute
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(value), gl.STATIC_DRAW)
     gl.enableVertexAttribArray(location)
     gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
   }
 
-  createPlainAttribute () {
+  createWholeAttribute () {
     this.createAttribute({
-      position: plainAttribute
+      position: wholeAttribute
     })
   }
 
   createUniform (data) {
-    const mergedData = Object.assign({
-      resolution: [0, 0]
-    }, data)
+    const mergedData = Object.assign({}, data)
+
+    if (this.hasResolution) mergedData.resolution = [0, 0]
+    if (this.hasTime) mergedData.time = 0
+    if (this.hasCamera) {
+      mergedData.mvpMatrix = new Float32Array(16)
+      mergedData.invMatrix = new Float32Array(16)
+    }
+    if (this.hasLight) {
+      mergedData.lightDirection = [0, 0, 0]
+      mergedData.eyeDirection = [0, 0, 0]
+      mergedData.ambientColor = [0.1, 0.1, 0.1, 1]
+    }
 
     Object.keys(mergedData).forEach(key => {
       this.addUniform(key, mergedData[key])
@@ -144,7 +158,6 @@ export default class Webgl {
   }
 
   addUniform (key, value) {
-    const { gl } = this
     let uniformType
     let uniformValue = value
 
@@ -152,13 +165,23 @@ export default class Webgl {
       uniformType = '1f'
     } else if (typeof value === 'object') {
       switch (value.constructor.name) {
+        case 'Float32Array':
         case 'Array':
-          uniformType = `${value.length}fv`
+          switch (value.length) {
+            case 16:
+              uniformType = 'Matrix4fv'
+              break
+            default:
+              uniformType = `${value.length}fv`
+          }
           break
         case 'HTMLImageElement':
           uniformType = '1i'
           uniformValue = this.createTexture(value, key)
           break
+        case 'Object':
+          uniformType = value.type
+          uniformValue = value.value
       }
     }
 
@@ -168,7 +191,7 @@ export default class Webgl {
     }
 
     this.uniforms[key] = {
-      location: gl.getUniformLocation(this.program, key),
+      location: this.gl.getUniformLocation(this.program, key),
       type: `uniform${uniformType}`
     }
 
@@ -176,18 +199,20 @@ export default class Webgl {
   }
 
   setUniform (key, value) {
-    const { gl } = this
     const uniform = this.uniforms[key]
     if (!uniform) return
+    const { location, type } = uniform
 
-    gl[uniform.type](uniform.location, value)
+    const args = /^uniformMatrix/.test(type)
+      ? [location, false, value]
+      : [location, value]
+    this.gl[type](...args)
   }
 
   createTexture (img, key) {
     const { gl } = this
-    const textureIndex = ++this.textureIndex
     const texture = gl.createTexture()
-    this.textureIndexes[key] = textureIndex
+    this.textureIndexes[key] = ++textureIndex
 
     gl.activeTexture(gl[`TEXTURE${textureIndex}`])
     gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -212,21 +237,117 @@ export default class Webgl {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
   }
 
+  use () {
+    this.gl.useProgram(this.program)
+  }
+
+  draw () {
+    const { gl, attributes } = this
+
+    Object.keys(attributes).forEach(key => {
+      this.setAttribute(key)
+    })
+
+    gl.drawArrays(gl[this.mode], 0, attributes.position.count)
+  }
+}
+
+export default class Webgl {
+  constructor (option) {
+    this.programs = {}
+    this.mMatrix = matIV.identity(matIV.create())
+    this.vMatrix = matIV.identity(matIV.create())
+    this.pMatrix = matIV.identity(matIV.create())
+    this.vpMatrix = matIV.identity(matIV.create())
+    this.mvpMatrix = matIV.identity(matIV.create())
+    this.invMatrix = matIV.identity(matIV.create())
+
+    const {
+      canvas,
+      programs,
+      fov,
+      near = 0.1,
+      far = 2000,
+      cameraPosition = [0, 0, 30],
+      cameraRotation = [0, 0],
+      lightDirection = [-0.5, 0.5, 0.5],
+      eyeDirection = cameraPosition,
+      ambientColor = [0.1, 0.1, 0.1, 1],
+      clearedColor,
+      tick = () => {},
+      onResize,
+      mainProgramKey = 'main',
+      isAutoStart = true
+    } = option
+
+    this.initWebgl(canvas)
+
+    this.fov = typeof fov !== 'undefined' ? fov : Math.atan(this.canvas.clientHeight / 2 / cameraPosition[2]) * (180 / Math.PI) * 2
+    this.near = near
+    this.far = far
+    this.cameraPosition = cameraPosition
+    this.cameraRotation = cameraRotation
+
+    this.lightDirection = lightDirection
+    this.eyeDirection = eyeDirection
+    this.ambientColor = ambientColor
+
+    this.tick = tick
+    this.onResize = onResize
+    this.clearedColor = clearedColor
+    this.mainProgramKey = mainProgramKey
+
+    Object.keys(programs).forEach(key => {
+      this.createProgram(key, programs[key])
+    })
+
+    if (clearedColor) this.clearColor(clearedColor)
+
+    this.initSize()
+
+    if (isAutoStart) this.start()
+  }
+
+  initWebgl (canvas) {
+    if (typeof canvas === 'string') {
+      this.canvas = document.querySelector(canvas)
+    } else if (typeof canvas === 'object' && canvas.constructor.name === 'HTMLCanvasElement') {
+      this.canvas = canvas
+    } else {
+      throw new Error(`Failed to set canvas.`)
+    }
+
+    this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
+  }
+
+  createProgram (key, option) {
+    this.programs[key] = new Program(this.gl, option)
+  }
+
   clearColor (clearedColor = [0, 0, 0, 1]) {
-    const { gl } = this
-    gl.clearColor(...clearedColor)
+    this.gl.clearColor(...clearedColor)
   }
 
   setSize () {
-    const { gl } = this
     const width = this.canvas.clientWidth
     const height = this.canvas.clientHeight
 
     this.canvas.width = width
     this.canvas.height = height
+    this.aspect = width / height
 
-    gl.viewport(0, 0, width, height)
-    this.setUniform('resolution', [width, height])
+    this.gl.viewport(0, 0, width, height)
+
+    Object.keys(this.programs).forEach(key => {
+      const program = this.programs[key]
+      if (program.hasResolution) {
+        program.use()
+        program.setUniform('resolution', [width, height])
+      }
+    })
+
+    this.updateCamera()
+    this.updateLight()
 
     if (this.onResize) this.onResize()
   }
@@ -236,15 +357,81 @@ export default class Webgl {
     window.addEventListener('resize', () => { this.setSize() })
   }
 
+  updateCamera () {
+    const {
+      fov,
+      near,
+      far,
+      cameraPosition,
+      cameraRotation,
+      mMatrix,
+      vMatrix,
+      pMatrix,
+      vpMatrix,
+      mvpMatrix,
+      invMatrix
+    } = this
+    const cameraPositionRate = 0.3
+
+    // cameraPosition[0] += (pointer.x * cameraPositionRate - cameraPosition[0]) * 0.1
+    // cameraPosition[1] += (pointer.y * cameraPositionRate - cameraPosition[1]) * 0.1
+    // cameraPosition[2] += (settings.zPosition - cameraPosition[2]) * 0.1
+    this.eyeDirection = cameraPosition
+
+    matIV.identity(mMatrix)
+    matIV.lookAt(
+      cameraPosition,
+      [cameraPosition[0], cameraPosition[1], 0.0],
+      [0.0, 1.0, 0.0],
+      vMatrix
+    )
+    matIV.perspective(fov, this.aspect, near, far, pMatrix)
+    matIV.multiply(pMatrix, vMatrix, vpMatrix)
+
+    cameraRotation[0] = cameraRotation[0] % PI2
+    cameraRotation[1] = cameraRotation[1] % PI2
+    matIV.rotate(mMatrix, cameraRotation[0], [0.0, 1.0, 0.0], mMatrix)
+    matIV.rotate(mMatrix, cameraRotation[1], [-1.0, 0.0, 0.0], mMatrix)
+    matIV.multiply(vpMatrix, mMatrix, mvpMatrix)
+    matIV.inverse(mMatrix, invMatrix)
+
+    Object.keys(this.programs).forEach(key => {
+      const program = this.programs[key]
+      if (program.hasCamera) {
+        program.use()
+        program.setUniform('mvpMatrix', mvpMatrix)
+        program.setUniform('invMatrix', invMatrix)
+      }
+    })
+  }
+
+  updateLight () {
+    const {
+      lightDirection,
+      eyeDirection,
+      ambientColor
+    } = this
+
+    Object.keys(this.programs).forEach(key => {
+      const program = this.programs[key]
+      if (program.hasLight) {
+        program.use()
+        program.setUniform('lightDirection', lightDirection)
+        program.setUniform('eyeDirection', eyeDirection)
+        program.setUniform('ambientColor', ambientColor)
+      }
+    })
+  }
+
   start () {
     const { gl } = this
 
     const render = timestamp => {
+      const time = timestamp / 1000
+
       if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      if (this.tick) this.tick(timestamp)
-
-      if (this.hasPlain) gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.attributes.position.count)
+      this.tick(time)
 
       this.requestID = requestAnimationFrame(render)
     }

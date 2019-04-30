@@ -5,14 +5,11 @@ uniform sampler2D image;
 uniform vec2 imageResolution;
 uniform float time;
 
-varying vec2 vUv;
-
 #pragma glslify: snoise3 = require(glsl-noise/simplex/3d)
-#pragma glslify: getUv = require(./modules/getUv.glsl)
 #pragma glslify: adjustRatio = require(./modules/adjustRatio.glsl)
 
 void main() {
-  vec2 uv = vUv;
+  vec2 uv = gl_PointCoord * 2. - 1.;
 
   float existence = snoise3(vec3(uv, 10.));
   existence = mix(0.3, 1., existence);
@@ -24,6 +21,6 @@ void main() {
   vec3 color = texture2D(image, uv).rgb;
 
   gl_FragColor = vec4(color, mix(1., 0., step(1., existence)));
-  // gl_FragColor = vec4(color, 1.);
+  gl_FragColor = vec4(color, 1.);
   // gl_FragColor = vec4(vec3(existence), 1.);
 }
