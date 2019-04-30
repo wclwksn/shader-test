@@ -26,6 +26,7 @@ class Program {
       uniforms,
       mode = 'TRIANGLE_STRIP',
       drawType = 'STATIC_DRAW',
+      isTransparent = false,
       hasResolution = true,
       hasCamera = true,
       hasLight = true,
@@ -36,6 +37,7 @@ class Program {
     this.gl = gl
     this.mode = mode
     this.drawType = drawType
+    this.isTransparent = isTransparent
     this.hasResolution = hasResolution
     this.hasCamera = hasCamera
     this.hasLight = hasLight
@@ -244,6 +246,8 @@ class Program {
   draw () {
     const { gl, attributes } = this
 
+    if (this.isTransparent) gl.enable(gl.BLEND)
+
     Object.keys(attributes).forEach(key => {
       this.setAttribute(key)
     })
@@ -264,7 +268,6 @@ export default class Webgl {
 
     const {
       canvas,
-      programs,
       fov,
       near = 0.1,
       far = 2000,
@@ -274,9 +277,9 @@ export default class Webgl {
       eyeDirection = cameraPosition,
       ambientColor = [0.1, 0.1, 0.1, 1],
       clearedColor,
+      programs,
       tick = () => {},
       onResize,
-      mainProgramKey = 'main',
       isAutoStart = true
     } = option
 
@@ -295,7 +298,6 @@ export default class Webgl {
     this.tick = tick
     this.onResize = onResize
     this.clearedColor = clearedColor
-    this.mainProgramKey = mainProgramKey
 
     Object.keys(programs).forEach(key => {
       this.createProgram(key, programs[key])
@@ -425,9 +427,14 @@ export default class Webgl {
 
   start () {
     const { gl } = this
+    let initialTimestamp
+
+    requestAnimationFrame(timestamp => {
+      initialTimestamp = timestamp
+    })
 
     const render = timestamp => {
-      const time = timestamp / 1000
+      const time = (timestamp - initialTimestamp) / 1000
 
       if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
