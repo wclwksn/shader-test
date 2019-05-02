@@ -4,37 +4,21 @@ attribute vec2 uv;
 
 uniform vec2 resolution;
 uniform mat4 mvpMatrix;
-uniform mat4 invMatrix;
-uniform vec3 lightDirection;
-uniform vec4 ambientColor;
-uniform vec3 eyeDirection;
 uniform float time;
 
 varying vec2 vUv;
-varying vec4 vModelColor;
+varying vec3 vNormal;
+varying float vAlpha;
 
 #pragma glslify: snoise2 = require(glsl-noise/simplex/2d)
 #pragma glslify: snoise3 = require(glsl-noise/simplex/3d)
 #pragma glslify: getExistence = require(./getExistence.glsl)
 
 const vec4 color = vec4(vec3(0.5), 1.);
-const float radian = 0.;
-const vec3 axis = normalize(vec3(0., 1., 0.));
 
 void main() {
-  // vec3 resultNormal = rotateQ(axis, radian) * normal;
-  vec3 resultNormal = normal;
-  vec3 invLight = normalize(invMatrix * vec4(lightDirection, 0.)).xyz;
-  vec3 invEye = normalize(invMatrix * vec4(eyeDirection, 0.)).xyz;
-  vec3 halfLE = normalize(invLight + invEye);
-  float diffuse = clamp(dot(resultNormal, invLight), 0.1, 1.);
-  float specular = pow(clamp(dot(resultNormal, halfLE), 0., 1.), 50.);
-
   vUv = uv;
-
-  vModelColor = vec4(1.);
-  // vModelColor *= vec4(vec3(diffuse), 1.) + vec4(vec3(specular), 1.);
-  vModelColor += ambientColor;
+  vNormal = normal;
 
   float existence = getExistence(uv, time);
   existence = max(existence - 0.01, 0.);
@@ -46,8 +30,9 @@ void main() {
   cPosition.y += sin(existence * noise * 3.) * resolution.y * 0.001;
   cPosition.z += existence * mix(0.8, 1., noise) * 20.;
 
-  vModelColor.a *= min(1. - existence * 0.5, 1.);
+  vAlpha = min(1. - existence * 0.3, 1.);
+  // vAlpha = 1.;
 
   gl_Position = mvpMatrix * cPosition;
-  gl_PointSize = mix(0.7, 3., existence * 0.1);
+  gl_PointSize = mix(1., 3., existence * 0.1);
 }

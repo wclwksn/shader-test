@@ -51,6 +51,8 @@ class Program {
     else if (attributes) this.createAttribute(attributes)
 
     if (uniforms) this.createUniform(uniforms)
+
+    if (isTransparent) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
   }
 
   createProgram (vertexShader, fragmentShader) {
@@ -151,7 +153,7 @@ class Program {
     if (this.hasLight) {
       mergedData.lightDirection = [0, 0, 0]
       mergedData.eyeDirection = [0, 0, 0]
-      mergedData.ambientColor = [0.1, 0.1, 0.1, 1]
+      mergedData.ambientColor = [0.1, 0.1, 0.1]
     }
 
     Object.keys(mergedData).forEach(key => {
@@ -247,6 +249,7 @@ class Program {
     const { gl, attributes } = this
 
     if (this.isTransparent) gl.enable(gl.BLEND)
+    else gl.disable(gl.BLEND)
 
     Object.keys(attributes).forEach(key => {
       this.setAttribute(key)
@@ -275,7 +278,7 @@ export default class Webgl {
       cameraRotation = [0, 0],
       lightDirection = [-0.5, 0.5, 0.5],
       eyeDirection = cameraPosition,
-      ambientColor = [0.1, 0.1, 0.1, 1],
+      ambientColor = [0.1, 0.1, 0.1],
       clearedColor,
       programs,
       tick = () => {},

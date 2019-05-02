@@ -14,7 +14,7 @@ void main() {
   vec2 uv = vUv;
 
   float existence = getExistence(uv, time);
-  float alpha = 1. - pow(existence, 0.08);
+  float alpha = 1. - pow(existence, 0.02);
   if (alpha == 0.) discard;
 
   uv = adjustRatio(uv, imageResolution, resolution);
