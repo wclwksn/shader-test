@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "dev": "parcel smoke.html --open",
-    "build": "parcel build smoke.html"
+    "dev": "parcel index.html --open",
+    "build": "parcel build index.html"
   },
   "devDependencies": {
     "glslify-bundle": "^5.1.1",
