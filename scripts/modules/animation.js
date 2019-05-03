@@ -18,9 +18,11 @@ export function animate (fn, options = {}) {
     begin = 0,
     finish = 1,
     duration = 500,
-    easing = 'easeInOutCubic',
+    delay,
+    easing = 'linear',
     cubicBezier,
     isRoop = false,
+    onBefore,
     onAfter
   } = options
 
@@ -42,20 +44,30 @@ export function animate (fn, options = {}) {
 
     if (time === duration) {
       if (isRoop) {
-        startTime = timestamp
-        requestAnimationFrame(tick)
+        init()
       } else {
-        onAfter && onAfter()
+        if (onAfter) onAfter()
       }
     } else {
       requestAnimationFrame(tick)
     }
   }
 
-  requestAnimationFrame(timestamp => {
-    startTime = timestamp
-    tick(timestamp)
-  })
+  function init () {
+    if (onBefore) onBefore()
+
+    if (delay) setTimeout(start, delay)
+    else start()
+  }
+
+  function start () {
+    requestAnimationFrame(timestamp => {
+      startTime = timestamp
+      tick(timestamp)
+    })
+  }
+
+  init()
 }
 
 export class Animation {
@@ -64,6 +76,7 @@ export class Animation {
       begin = 0,
       finish = 1,
       duration = 500,
+      delay,
       easing = 'easeInOutCubic',
       cubicBezier,
       isRoop = false,
@@ -88,7 +101,7 @@ export class Animation {
       this.easingFunction = easingFunctions[easing]
     }
 
-    isAuto && this.start()
+    if (isAuto) this.init()
   }
 
   set easing (easing) {
@@ -103,9 +116,9 @@ export class Animation {
 
     if (time === this.duration) {
       if (this.isRoop) {
-        this.animate()
+        this.init()
       } else {
-        this.onAfter && this.onAfter()
+        if (this.onAfter) this.onAfter()
       }
     } else {
       this.requestID = requestAnimationFrame(this.tick.bind(this))
@@ -119,23 +132,28 @@ export class Animation {
     })
   }
 
+  init () {
+    if (this.onBefore) this.onBefore()
+
+    if (delay) setTimeout(this.start, delay)
+    else this.start()
+  }
+
   start () {
-    this.onBefore && this.onBefore()
     this.begin = this.originalFrom
     this.finish = this.originalTo
     this.change = this.finish - this.begin
 
-    this.requestID && this.stop()
+    if (this.requestID) this.stop()
     this.animate()
   }
 
   reverse () {
-    this.onBefore && this.onBefore()
     this.begin = this.originalTo
     this.finish = this.originalFrom
     this.change = this.finish - this.begin
 
-    this.requestID && this.stop()
+    if (this.requestID) this.stop()
     this.animate()
   }
 
@@ -146,7 +164,7 @@ export class Animation {
   stop () {
     cancelAnimationFrame(this.requestID)
     this.requestID = null
-    this.onStop && this.onStop()
+    if (this.onStop) this.onStop()
   }
 }
 

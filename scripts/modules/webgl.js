@@ -241,6 +241,35 @@ class Program {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
   }
 
+  createFramebufferFloat (key, width, height = width) {
+    const { gl } = this
+    const textureFloat = gl.getExtension('OES_texture_float')
+    const textureHalfFloat = gl.getExtension('OES_texture_half_float')
+
+    if (!textureFloat && !textureHalfFloat) {
+      console.error('float texture not support')
+      return
+    }
+
+    const flg = textureFloat ? gl.FLOAT : textureHalfFloat.HALF_FLOAT_OES
+    const framebuffer = gl.createFramebuffer()
+    const texture = gl.createTexture()
+    this.textureIndexes[key] = ++textureIndex
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, flg, null)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
+    return { framebuffer, textureIndex }
+  }
+
   use () {
     this.gl.useProgram(this.program)
   }
@@ -276,7 +305,7 @@ export default class Webgl {
       far = 2000,
       cameraPosition = [0, 0, 30],
       cameraRotation = [0, 0],
-      lightDirection = [-0.5, 0.5, 0.5],
+      lightDirection = [-1, 1, 1],
       eyeDirection = cameraPosition,
       ambientColor = [0.1, 0.1, 0.1],
       clearedColor,
