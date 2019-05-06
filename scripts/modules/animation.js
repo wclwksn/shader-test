@@ -43,11 +43,8 @@ export function animate (fn, options = {}) {
     fn(position, time)
 
     if (time === duration) {
-      if (isRoop) {
-        init()
-      } else {
-        if (onAfter) onAfter()
-      }
+      if (onAfter) onAfter()
+      if (isRoop) init()
     } else {
       requestAnimationFrame(tick)
     }
@@ -77,7 +74,7 @@ export class Animation {
       finish = 1,
       duration = 500,
       delay,
-      easing = 'easeInOutCubic',
+      easing = 'linear',
       cubicBezier,
       isRoop = false,
       isAuto = true,
@@ -115,11 +112,8 @@ export class Animation {
     this.fn(position, time)
 
     if (time === this.duration) {
-      if (this.isRoop) {
-        this.init()
-      } else {
-        if (this.onAfter) this.onAfter()
-      }
+      if (this.onAfter) this.onAfter()
+      if (this.isRoop) this.init()
     } else {
       this.requestID = requestAnimationFrame(this.tick.bind(this))
     }

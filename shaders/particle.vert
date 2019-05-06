@@ -16,6 +16,7 @@ uniform float time;
 varying vec4 vColor;
 
 #pragma glslify: snoise2 = require(glsl-noise/simplex/2d)
+#pragma glslify: ease = require(glsl-easings/quartic-out)
 #pragma glslify: adjustRatio = require(./modules/adjustRatio.glsl)
 #pragma glslify: getExistence = require(./getExistence.glsl)
 
@@ -27,13 +28,14 @@ void main() {
   float existence = getExistence(uv, time);
   existence = max(existence - 0.95, 0.);
   existence = smoothstep(0., 0.5, existence);
+  existence = ease(existence);
 
-  float noise = snoise2(uv * vec2(resolution.x * 0.5, resolution.y * 0.5)) / 0.71;
+  float noise = snoise2(uv * resolution * 0.5) / 0.71;
   float plusNoise = (noise + 1.) / 2.;
 
   vec4 cPosition = vec4(position, 1.);
-  cPosition.x += existence * mix(0.5, 1., plusNoise) * resolution.x * 0.7;
-  cPosition.y += existence * noise * resolution.y * 0.02;
+  cPosition.x += existence * mix(0.1, 1., plusNoise) * resolution.x * 0.7;
+  cPosition.y += existence * noise * resolution.y * 0.2;
   cPosition.z += existence * plusNoise * maxZ;
 
   vColor = texture2D(image, adjustRatio(uv, imageResolution, resolution));
@@ -49,12 +51,15 @@ void main() {
   vColor.rgb *= vec3(diffuse);
   vColor.rgb += vec3(specular);
   vColor.rgb += ambientColor;
+  // vColor.rgb = vec3(noise); // * debug
 
-  vColor.a = 1. - existence * mix(1., 3., plusNoise);
+  float alphaNoise = snoise2(uv * resolution * 2.) / 0.71;
+  alphaNoise = (alphaNoise + 1.) / 2.;
+  vColor.a = 1. - existence * mix(5., 1.5, alphaNoise);
   vColor.a *= 1. - step(existence, 0.);
   // vColor.a = 1.; // * debug
 
   gl_Position = mvpMatrix * cPosition;
-  gl_PointSize = mix(1., 5., cPosition.z / maxZ) * mix(1., 2., existence);
-  // gl_PointSize = 2.; // * debug
+  gl_PointSize = mix(1., 4., cPosition.z / maxZ) * mix(1., 2., existence);
+  // gl_PointSize = 1.; // * debug
 }

@@ -105,9 +105,9 @@ loadImage(image).then(img => {
   }
 
   animate(draw, {
-    duration: 10000,
+    duration: 8000,
     // delay: 0,
-    easing: 'easeInCubic',
+    // easing: 'easeInCubic',
     // cubicBezier: [.3, .0, .4, 1],
     isRoop: true,
     onBefore () {
