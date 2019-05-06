@@ -6,9 +6,9 @@ import particleVertexShader from '../shaders/particle.vert'
 import particleFragmentShader from '../shaders/particle.frag'
 
 const image = require('../images/room.jpg')
-// const image = require('../images/star.jpeg')
+const image2 = require('../images/star.jpeg')
 
-loadImage(image).then(img => {
+loadImage([image, image2]).then(([img, img2]) => {
   const canvas = document.getElementById('canvas')
   const width = canvas.clientWidth
   const height = canvas.clientHeight
@@ -55,8 +55,10 @@ loadImage(image).then(img => {
           }
         },
         uniforms: {
+          image: img,
           imageResolution: [img.width, img.height],
-          image: img
+          image2: img2,
+          imageResolution2: [img2.width, img2.height]
         }
       },
       particle: {
@@ -77,8 +79,8 @@ loadImage(image).then(img => {
           }
         },
         uniforms: {
-          imageResolution: [img.width, img.height],
-          image: img
+          image: img,
+          imageResolution: [img.width, img.height]
         },
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',

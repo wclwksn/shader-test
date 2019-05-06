@@ -2,7 +2,9 @@ precision highp float;
 
 uniform vec2 resolution;
 uniform sampler2D image;
+uniform sampler2D image2;
 uniform vec2 imageResolution;
+uniform vec2 imageResolution2;
 uniform float time;
 
 varying vec2 vUv;
@@ -19,12 +21,11 @@ void main() {
   float alpha = 1. - existence;
   // alpha = 1.; // * debug
   // alpha = 1. - existence; // * debug
-  if (alpha == 0.) discard;
 
-  uv = adjustRatio(uv, imageResolution, resolution);
-  vec3 color = texture2D(image, uv).rgb;
+  vec3 color = texture2D(image, adjustRatio(uv, imageResolution, resolution)).rgb;
+  vec3 color2 = texture2D(image2, adjustRatio(uv, imageResolution2, resolution)).rgb;
 
-  gl_FragColor = vec4(color, alpha);
+  gl_FragColor = vec4(mix(color2, color, alpha), 1.);
   // gl_FragColor = vec4(color, 1.); // * debug
   // gl_FragColor = vec4(vec3(existence), 1.); // * debug
 }

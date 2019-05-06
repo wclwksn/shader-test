@@ -485,17 +485,27 @@ export default class Webgl {
   }
 }
 
-export function loadImage (src, isCrossOrigin) {
-  const img = new Image()
+export function loadImage (srcs, isCrossOrigin) {
+  if (!(typeof srcs === 'object' && srcs.constructor.name === 'Array')) {
+    srcs = [srcs]
+  }
 
-  const promise = new Promise(resolve => {
-    img.addEventListener('load', () => {
-      resolve(img)
-    })
+  let promises = []
+
+  srcs.forEach(src => {
+    const img = new Image()
+
+    promises.push(
+      new Promise(resolve => {
+        img.addEventListener('load', () => {
+          resolve(img)
+        })
+      })
+    )
+
+    if (isCrossOrigin) img.crossOrigin = 'anonymous'
+    img.src = src
   })
 
-  if (isCrossOrigin) img.crossOrigin = 'anonymous'
-  img.src = src
-
-  return promise
+  return Promise.all(promises)
 }
