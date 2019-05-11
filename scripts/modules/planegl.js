@@ -8,22 +8,27 @@ void main() {
 
 export default class Planegl {
   constructor (option) {
-    const {
-      canvas,
-      fragmentShader,
-      uniforms,
-      clearedColor,
-      tick,
-      onResize,
-      isAutoStart = true
-    } = option
-
     this.attributes = {}
     this.uniforms = {}
     this.textureIndexes = {}
     this.textureIndex = -1
 
+    const {
+      canvas,
+      fragmentShaderSelector,
+      fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
+      uniforms,
+      clearedColor,
+      tick,
+      hasResolution = true,
+      hasTime = true,
+      onResize,
+      isAutoStart = true
+    } = option
+
     this.tick = tick
+    this.hasResolution = hasResolution
+    this.hasTime = hasTime
     this.onResize = onResize
     this.clearedColor = clearedColor
 
@@ -33,7 +38,7 @@ export default class Planegl {
 
     this.createPlaneAttribute()
 
-    if (uniforms) this.createUniform(uniforms)
+    this.createUniform(uniforms)
 
     if (clearedColor) this.clearColor(clearedColor)
 
@@ -48,7 +53,10 @@ export default class Planegl {
     } else if (typeof canvas === 'object' && canvas.constructor.name === 'HTMLCanvasElement') {
       this.canvas = canvas
     } else {
-      throw new Error(`Failed to set canvas.`)
+      this.canvas = document.createElement('canvas')
+      this.canvas.style.width = '100%'
+      this.canvas.style.height = '100%'
+      document.body.appendChild(this.canvas)
     }
 
     this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
@@ -97,15 +105,15 @@ export default class Planegl {
       1, -1, 0
     ]
     const stride = 3
+    const location = gl.getAttribLocation(this.program, key)
+    const vbo = gl.createBuffer()
 
     this.attributes[key] = {
-      location: gl.getAttribLocation(this.program, key),
+      location,
       stride,
-      vbo: gl.createBuffer(),
+      vbo,
       count: value.length / stride
     }
-
-    const { location, stride, vbo } = this.attributes[key]
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(value), gl.STATIC_DRAW)
@@ -114,9 +122,10 @@ export default class Planegl {
   }
 
   createUniform (data) {
-    const mergedData = Object.assign({
-      resolution: [0, 0]
-    }, data)
+    const mergedData = Object.assign({}, data)
+
+    if (this.hasResolution && !mergedData.resolution) mergedData.resolution = [0, 0]
+    if (this.hasTime && !mergedData.time) mergedData.time = 0
 
     Object.keys(mergedData).forEach(key => {
       this.addUniform(key, mergedData[key])
@@ -132,13 +141,23 @@ export default class Planegl {
       uniformType = '1f'
     } else if (typeof value === 'object') {
       switch (value.constructor.name) {
+        case 'Float32Array':
         case 'Array':
-          uniformType = `${value.length}fv`
+          switch (value.length) {
+            case 16:
+              uniformType = 'Matrix4fv'
+              break
+            default:
+              uniformType = `${value.length}fv`
+          }
           break
         case 'HTMLImageElement':
           uniformType = '1i'
           uniformValue = this.createTexture(value, key)
           break
+        case 'Object':
+          uniformType = value.type
+          uniformValue = value.value
       }
     }
 
@@ -181,14 +200,10 @@ export default class Planegl {
     return textureIndex
   }
 
-  getTextureIndex (key) {
-    return this.textureIndexes[key]
-  }
-
   updateTexture (key, img) {
     const { gl } = this
 
-    this.activeTexture(this.getTextureIndex(key))
+    this.activeTexture(this.textureIndexes[key])
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
   }
 
@@ -206,7 +221,7 @@ export default class Planegl {
     this.canvas.height = height
 
     gl.viewport(0, 0, width, height)
-    this.setUniform('resolution', [width, height])
+    if (this.hasResolution) this.setUniform('resolution', [width, height])
 
     if (this.onResize) this.onResize()
   }
@@ -222,7 +237,10 @@ export default class Planegl {
     const render = timestamp => {
       if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      if (this.tick) this.tick(timestamp)
+      const time = timestamp / 1000
+      if (this.hasTime) this.setUniform('time', time)
+
+      if (this.tick) this.tick(time)
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.attributes.position.count)
 
