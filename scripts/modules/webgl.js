@@ -1,8 +1,8 @@
 import matIV from './minMatrix.js'
-import wholeVertexShader from '../../shaders/modules/whole.vert'
+import fillVertexShader from '../../shaders/modules/fill.vert'
 
 const PI2 = Math.PI * 2
-const wholeAttribute = {
+const fillAttribute = {
   value: [
     -1, 1, 0,
     -1, -1, 0,
@@ -20,17 +20,19 @@ class Program {
     this.textureIndexes = {}
 
     const {
-      vertexShader = wholeVertexShader,
-      fragmentShader,
+      framebuffer,
+      vertexShader = fillVertexShader,
+      fragmentShaderSelector,
+      fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
       attributes,
       uniforms,
+      hasResolution = false,
+      hasTime = false,
       mode = 'TRIANGLE_STRIP',
       drawType = 'STATIC_DRAW',
       isTransparent = false,
-      hasResolution = true,
       hasCamera = true,
-      hasLight = true,
-      hasTime = true
+      hasLight = true
     } = option
     const isWhole = !option.vertexShader
 
@@ -137,7 +139,7 @@ class Program {
 
   createWholeAttribute () {
     this.createAttribute({
-      position: wholeAttribute
+      position: fillAttribute
     })
   }
 
@@ -230,44 +232,11 @@ class Program {
     return textureIndex
   }
 
-  getTextureIndex (key) {
-    return this.textureIndexes[key]
-  }
-
   updateTexture (key, img) {
     const { gl } = this
 
-    this.activeTexture(this.getTextureIndex(key))
+    this.activeTexture(this.textureIndexes[key])
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
-  }
-
-  createFramebufferFloat (key, width, height = width) {
-    const { gl } = this
-    const textureFloat = gl.getExtension('OES_texture_float')
-    const textureHalfFloat = gl.getExtension('OES_texture_half_float')
-
-    if (!textureFloat && !textureHalfFloat) {
-      console.error('float texture not support')
-      return
-    }
-
-    const flg = textureFloat ? gl.FLOAT : textureHalfFloat.HALF_FLOAT_OES
-    const framebuffer = gl.createFramebuffer()
-    const texture = gl.createTexture()
-    this.textureIndexes[key] = ++textureIndex
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
-    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, flg, null)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-
-    return { framebuffer, textureIndex }
   }
 
   use () {
@@ -291,6 +260,7 @@ class Program {
 export default class Webgl {
   constructor (option) {
     this.programs = {}
+    this.framebuffers = {}
     this.mMatrix = matIV.identity(matIV.create())
     this.vMatrix = matIV.identity(matIV.create())
     this.pMatrix = matIV.identity(matIV.create())
@@ -309,7 +279,7 @@ export default class Webgl {
       eyeDirection = cameraPosition,
       ambientColor = [0.1, 0.1, 0.1],
       clearedColor,
-      programs,
+      programs = {},
       tick = () => {},
       onResize,
       isAutoStart = true
@@ -348,7 +318,10 @@ export default class Webgl {
     } else if (typeof canvas === 'object' && canvas.constructor.name === 'HTMLCanvasElement') {
       this.canvas = canvas
     } else {
-      throw new Error(`Failed to set canvas.`)
+      this.canvas = document.createElement('canvas')
+      this.canvas.style.width = '100%'
+      this.canvas.style.height = '100%'
+      document.body.appendChild(this.canvas)
     }
 
     this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
@@ -356,6 +329,67 @@ export default class Webgl {
 
   createProgram (key, option) {
     this.programs[key] = new Program(this.gl, option)
+  }
+
+  createFramebuffer (key, width, height = width) {
+    const { gl } = this
+
+    const framebuffer = gl.createFramebuffer()
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+    const depthRenderBuffer = gl.createRenderbuffer()
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderBuffer)
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height)
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRenderBuffer)
+    const fTexture = gl.createTexture()
+    ++textureIndex
+    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
+    gl.bindTexture(gl.TEXTURE_2D, fTexture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fTexture, 0)
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    // gl.bindTexture(gl.TEXTURE_2D, null)
+
+    this.framebuffers[key] =  { framebuffer, textureIndex }
+  }
+
+  createFramebufferFloat (key, width, height = width) {
+    const { gl } = this
+    const textureFloat = gl.getExtension('OES_texture_float')
+    const textureHalfFloat = gl.getExtension('OES_texture_half_float')
+
+    if (!(textureFloat || textureHalfFloat)) {
+      console.error('float texture not support')
+      return
+    }
+
+    const flg = textureFloat ? gl.FLOAT : textureHalfFloat.HALF_FLOAT_OES
+    const framebuffer = gl.createFramebuffer()
+    const texture = gl.createTexture()
+    ++textureIndex
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, flg, null)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
+    this.framebuffers[key] = { framebuffer, textureIndex }
+  }
+
+  bindFramebuffer (key) {
+    const { gl } = this
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, key ? this.framebuffers[key].framebuffer : null)
   }
 
   clearColor (clearedColor = [0, 0, 0, 1]) {

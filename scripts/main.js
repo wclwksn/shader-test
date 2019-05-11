@@ -4,6 +4,7 @@ import mainVertexShader from '../shaders/main.vert'
 import mainFragmentShader from '../shaders/main.frag'
 import particleVertexShader from '../shaders/particle.vert'
 import particleFragmentShader from '../shaders/particle.frag'
+import toonFragmentShader from '../shaders/postprocessing/toon.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -28,7 +29,7 @@ loadImage([image, image2]).then(([img, img2]) => {
 
   const webgl = new Webgl({
     canvas,
-    cameraPosition: [0, 0, 100],
+    cameraPosition: [0, 0, 50],
     ambientColor: [0.2, 0.2, 0.2],
     programs: {
       main: {
@@ -59,7 +60,9 @@ loadImage([image, image2]).then(([img, img2]) => {
           imageResolution: [img.width, img.height],
           image2: img2,
           imageResolution2: [img2.width, img2.height]
-        }
+        },
+        hasResolution: true,
+        hasTime: true
       },
       particle: {
         vertexShader: particleVertexShader,
@@ -82,15 +85,28 @@ loadImage([image, image2]).then(([img, img2]) => {
           image: img,
           imageResolution: [img.width, img.height]
         },
+        hasResolution: true,
+        hasTime: true,
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
         isTransparent: true
+      },
+      toon: {
+        fragmentShader: toonFragmentShader
       }
     },
     isAutoStart: false
   })
 
+  webgl.createFramebuffer('postprocessing', width, height)
+  webgl.programs.toon.addUniform('texture', {
+    type: '1i',
+    value: webgl.framebuffers.postprocessing.textureIndex
+  })
+
   const draw = time => {
+    webgl.bindFramebuffer('postprocessing')
+
     {
       const program = webgl.programs.main
       program.use()
@@ -100,6 +116,15 @@ loadImage([image, image2]).then(([img, img2]) => {
 
     {
       const program = webgl.programs.particle
+      program.use()
+      program.setUniform('time', time)
+      program.draw()
+    }
+
+    webgl.bindFramebuffer(null)
+
+    {
+      const program = webgl.programs.toon
       program.use()
       program.setUniform('time', time)
       program.draw()

@@ -12,6 +12,7 @@
     "bezier-easing": "^2.1.0",
     "glsl-easings": "^1.0.0",
     "glsl-noise": "^0.0.0",
+    "glsl-random": "^0.0.5",
     "scripts": "^0.1.0"
   }
 }
