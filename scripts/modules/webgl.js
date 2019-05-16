@@ -146,16 +146,16 @@ class Program {
   createUniform (data) {
     const mergedData = Object.assign({}, data)
 
-    if (this.hasResolution) mergedData.resolution = [0, 0]
-    if (this.hasTime) mergedData.time = 0
+    if (this.hasResolution && !mergedData.resolution) mergedData.resolution = [0, 0]
+    if (this.hasTime && !mergedData.time) mergedData.time = 0
     if (this.hasCamera) {
       mergedData.mvpMatrix = new Float32Array(16)
       mergedData.invMatrix = new Float32Array(16)
     }
     if (this.hasLight) {
-      mergedData.lightDirection = [0, 0, 0]
-      mergedData.eyeDirection = [0, 0, 0]
-      mergedData.ambientColor = [0.1, 0.1, 0.1]
+      if (!mergedData.lightDirection) mergedData.lightDirection = [0, 0, 0]
+      if (!mergedData.eyeDirection) mergedData.eyeDirection = [0, 0, 0]
+      if (!mergedData.ambientColor) mergedData.ambientColor = [0.1, 0.1, 0.1]
     }
 
     Object.keys(mergedData).forEach(key => {
@@ -183,11 +183,17 @@ class Program {
           break
         case 'HTMLImageElement':
           uniformType = '1i'
-          uniformValue = this.createTexture(value, key)
+          uniformValue = this.createTexture(key, value)
           break
         case 'Object':
-          uniformType = value.type
-          uniformValue = value.value
+          if (value.type === 'image') {
+            uniformType = '1i'
+            uniformValue = this.createTexture(key, value.value)
+          } else {
+            uniformType = value.type
+            uniformValue = value.value
+          }
+          break
       }
     }
 
@@ -215,7 +221,7 @@ class Program {
     this.gl[type](...args)
   }
 
-  createTexture (img, key) {
+  createTexture (key, el) {
     const { gl } = this
     const texture = gl.createTexture()
     this.textureIndexes[key] = ++textureIndex
@@ -227,16 +233,16 @@ class Program {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el)
 
     return textureIndex
   }
 
-  updateTexture (key, img) {
+  updateTexture (key, el) {
     const { gl } = this
 
-    this.activeTexture(this.textureIndexes[key])
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    gl.activeTexture(gl[`TEXTURE${this.textureIndexes[key]}`])
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el)
   }
 
   use () {
@@ -280,7 +286,7 @@ export default class Webgl {
       ambientColor = [0.1, 0.1, 0.1],
       clearedColor,
       programs = {},
-      tick = () => {},
+      tick,
       onResize,
       isAutoStart = true
     } = option
@@ -504,7 +510,7 @@ export default class Webgl {
 
       if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      this.tick(time)
+      if (this.tick) this.tick(time)
 
       this.requestID = requestAnimationFrame(render)
     }

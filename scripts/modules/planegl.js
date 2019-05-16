@@ -1,14 +1,5 @@
-const plainVertexShader = `
-attribute vec3 position;
-varying vec4 vPosition;
-void main() {
-  gl_Position = vPosition = vec4(position, 1.);
-}
-`
-
 export default class Planegl {
   constructor (option) {
-    this.attributes = {}
     this.uniforms = {}
     this.textureIndexes = {}
     this.textureIndex = -1
@@ -34,7 +25,7 @@ export default class Planegl {
 
     this.initWebgl(canvas)
 
-    this.createProgram(plainVertexShader, fragmentShader)
+    this.createProgram(fragmentShader)
 
     this.createPlaneAttribute()
 
@@ -62,22 +53,24 @@ export default class Planegl {
     this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
   }
 
-  createProgram (vertexShader, fragmentShader) {
+  createProgram (fragmentShader) {
     const { gl } = this
 
-    this.program = gl.createProgram()
-    gl.attachShader(this.program, this.createShader('VERTEX_SHADER', vertexShader))
-    gl.attachShader(this.program, this.createShader('FRAGMENT_SHADER', fragmentShader))
-    gl.linkProgram(this.program)
+    const program = gl.createProgram()
+    gl.attachShader(program, this.createShader('VERTEX_SHADER', 'attribute vec3 position;varying vec4 vPosition;void main(){gl_Position=vPosition=vec4(position,1.);}'))
+    gl.attachShader(program, this.createShader('FRAGMENT_SHADER', fragmentShader))
+    gl.linkProgram(program)
 
-    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
-      console.error(gl.getProgramInfoLog(this.program))
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(program))
       return
     }
 
-    gl.useProgram(this.program)
+    gl.useProgram(program)
 
-    if (!this.program) throw new Error('Failed to create this.program.')
+    if (!program) throw new Error('Failed to create program.')
+
+    this.program = program
   }
 
   createShader (type, content) {
@@ -97,28 +90,12 @@ export default class Planegl {
 
   createPlaneAttribute () {
     const { gl } = this
-    const key = 'position'
-    const value = [
-      -1, 1, 0,
-      -1, -1, 0,
-      1, 1, 0,
-      1, -1, 0
-    ]
-    const stride = 3
-    const location = gl.getAttribLocation(this.program, key)
-    const vbo = gl.createBuffer()
+    const location = gl.getAttribLocation(this.program, 'position')
 
-    this.attributes[key] = {
-      location,
-      stride,
-      vbo,
-      count: value.length / stride
-    }
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(value), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 0, -1, -1, 0, 1, 1, 0, 1, -1, 0]), gl.STATIC_DRAW)
     gl.enableVertexAttribArray(location)
-    gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
+    gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0)
   }
 
   createUniform (data) {
@@ -133,7 +110,6 @@ export default class Planegl {
   }
 
   addUniform (key, value) {
-    const { gl } = this
     let uniformType
     let uniformValue = value
 
@@ -143,21 +119,21 @@ export default class Planegl {
       switch (value.constructor.name) {
         case 'Float32Array':
         case 'Array':
-          switch (value.length) {
-            case 16:
-              uniformType = 'Matrix4fv'
-              break
-            default:
-              uniformType = `${value.length}fv`
-          }
+          uniformType = `${value.length}fv`
           break
         case 'HTMLImageElement':
           uniformType = '1i'
-          uniformValue = this.createTexture(value, key)
+          uniformValue = this.createTexture(key, value)
           break
         case 'Object':
-          uniformType = value.type
-          uniformValue = value.value
+          if (value.type === 'image') {
+            uniformType = '1i'
+            uniformValue = this.createTexture(key, value.value)
+          } else {
+            uniformType = value.type
+            uniformValue = value.value
+          }
+          break
       }
     }
 
@@ -167,7 +143,7 @@ export default class Planegl {
     }
 
     this.uniforms[key] = {
-      location: gl.getUniformLocation(this.program, key),
+      location: this.gl.getUniformLocation(this.program, key),
       type: `uniform${uniformType}`
     }
 
@@ -175,52 +151,48 @@ export default class Planegl {
   }
 
   setUniform (key, value) {
-    const { gl } = this
     const uniform = this.uniforms[key]
     if (!uniform) return
 
-    gl[uniform.type](uniform.location, value)
+    this.gl[uniform.type](uniform.location, value)
   }
 
-  createTexture (img, key) {
+  createTexture (key, el) {
     const { gl } = this
-    const textureIndex = ++this.textureIndex
     const texture = gl.createTexture()
-    this.textureIndexes[key] = textureIndex
+    this.textureIndexes[key] = ++this.textureIndex
 
-    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
+    gl.activeTexture(gl[`TEXTURE${this.textureIndex}`])
     gl.bindTexture(gl.TEXTURE_2D, texture)
     // gl.generateMipmap(gl.TEXTURE_2D)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el)
 
-    return textureIndex
+    return this.textureIndex
   }
 
-  updateTexture (key, img) {
+  updateTexture (key, el) {
     const { gl } = this
 
-    this.activeTexture(this.textureIndexes[key])
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+    gl.activeTexture(gl[`TEXTURE${this.textureIndexes[key]}`])
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el)
   }
 
   clearColor (clearedColor = [0, 0, 0, 1]) {
-    const { gl } = this
-    gl.clearColor(...clearedColor)
+    this.gl.clearColor(...clearedColor)
   }
 
   setSize () {
-    const { gl } = this
     const width = this.canvas.clientWidth
     const height = this.canvas.clientHeight
 
     this.canvas.width = width
     this.canvas.height = height
 
-    gl.viewport(0, 0, width, height)
+    this.gl.viewport(0, 0, width, height)
     if (this.hasResolution) this.setUniform('resolution', [width, height])
 
     if (this.onResize) this.onResize()
@@ -233,16 +205,22 @@ export default class Planegl {
 
   start () {
     const { gl } = this
+    let initialTimestamp
+
+    requestAnimationFrame(timestamp => {
+      initialTimestamp = timestamp
+    })
 
     const render = timestamp => {
+      const time = (timestamp - initialTimestamp) / 1000
+
       if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      const time = timestamp / 1000
       if (this.hasTime) this.setUniform('time', time)
 
       if (this.tick) this.tick(time)
 
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.attributes.position.count)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
       this.requestID = requestAnimationFrame(render)
     }
@@ -257,17 +235,27 @@ export default class Planegl {
   }
 }
 
-export function loadImage (src, isCrossOrigin) {
-  const img = new Image()
+export function loadImage (srcs, isCrossOrigin) {
+  if (!(typeof srcs === 'object' && srcs.constructor.name === 'Array')) {
+    srcs = [srcs]
+  }
 
-  const promise = new Promise(resolve => {
-    img.addEventListener('load', () => {
-      resolve(img)
-    })
+  let promises = []
+
+  srcs.forEach(src => {
+    const img = new Image()
+
+    promises.push(
+      new Promise(resolve => {
+        img.addEventListener('load', () => {
+          resolve(img)
+        })
+      })
+    )
+
+    if (isCrossOrigin) img.crossOrigin = 'anonymous'
+    img.src = src
   })
 
-  if (isCrossOrigin) img.crossOrigin = 'anonymous'
-  img.src = src
-
-  return promise
+  return Promise.all(promises)
 }
