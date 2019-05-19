@@ -98,24 +98,25 @@ loadImage([image, image2]).then(([img, img2]) => {
     isAutoStart: false
   })
 
-  webgl.createFramebuffer('postprocessing', width, height)
-  webgl.programs.toon.addUniform('texture', {
+  webgl.createFramebuffer('scene', width, height)
+
+  webgl.programs['toon'].addUniform('texture', {
     type: '1i',
-    value: webgl.framebuffers.postprocessing.textureIndex
+    value: webgl.framebuffers['scene'].textureIndex
   })
 
   const draw = time => {
-    webgl.bindFramebuffer('postprocessing')
+    webgl.bindFramebuffer('scene')
 
     {
-      const program = webgl.programs.main
+      const program = webgl.programs['main']
       program.use()
       program.setUniform('time', time)
       program.draw()
     }
 
     {
-      const program = webgl.programs.particle
+      const program = webgl.programs['particle']
       program.use()
       program.setUniform('time', time)
       program.draw()
@@ -124,7 +125,7 @@ loadImage([image, image2]).then(([img, img2]) => {
     webgl.bindFramebuffer(null)
 
     {
-      const program = webgl.programs.toon
+      const program = webgl.programs['toon']
       program.use()
       program.setUniform('time', time)
       program.draw()
