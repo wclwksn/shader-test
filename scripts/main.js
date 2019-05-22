@@ -1,5 +1,6 @@
 import Webgl, { loadImage } from './modules/webgl'
 import { animate } from './modules/animation'
+import { mix } from './modules/math'
 import mainVert from '../shaders/main.vert'
 import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
@@ -95,9 +96,10 @@ loadImage([image, image2]).then(([img, img2]) => {
         fragmentShader: blurFrag,
         uniforms: {
           texture: {
-            type: '1i'
+            type: 'framebuffer'
           },
-          direction: [0, 0]
+          radius: 0,
+          isHorizontal: false
         },
         hasResolution: true
       }
@@ -106,14 +108,9 @@ loadImage([image, image2]).then(([img, img2]) => {
     isAutoStart: false
   })
 
-  const iterations = 8
-  let writeBuffer
-  let readBuffer
-  let t
-
   const draw = time => {
-    writeBuffer = '1'
-    readBuffer = '2'
+    let writeBuffer = '1'
+    let readBuffer = '2'
 
     webgl.bindFramebuffer(writeBuffer)
 
@@ -135,16 +132,15 @@ loadImage([image, image2]).then(([img, img2]) => {
       const program = webgl.programs['blur']
       program.use()
 
-      for (let i = 0; i < iterations; i++) {
-        t = writeBuffer
+      for (let i = 0; i < 2; i++) {
+        const t = writeBuffer
         writeBuffer = readBuffer
         readBuffer = t
 
-        const radius = (iterations - i - 1) * (Math.sin(time * 12) * 0.5 + 0.5)
-
-        webgl.bindFramebuffer(i < iterations - 1 ? writeBuffer : null)
+        webgl.bindFramebuffer(i < 1 ? writeBuffer : null)
         program.setFramebufferUniform('texture', readBuffer)
-        program.setUniform('direction', i % 2 === 0 ? [radius, 0] : [0, radius])
+        program.setUniform('radius', mix(1, 100, Math.sin(time * 12) * 0.5 + 0.5))
+        program.setUniform('isHorizontal', i % 2 === 0)
         program.draw()
       }
     }

@@ -113,28 +113,34 @@ export default class Planegl {
     let uniformType
     let uniformValue = value
 
-    if (typeof value === 'number') {
-      uniformType = '1f'
-    } else if (typeof value === 'object') {
-      switch (value.constructor.name) {
-        case 'Float32Array':
-        case 'Array':
-          uniformType = `${value.length}fv`
-          break
-        case 'HTMLImageElement':
-          uniformType = '1i'
-          uniformValue = this.createTexture(key, value)
-          break
-        case 'Object':
-          if (value.type === 'image') {
+    switch (typeof value) {
+      case 'number':
+        uniformType = '1f'
+        break
+      case 'boolean':
+        uniformType = '1i'
+        break
+      case 'object':
+        switch (value.constructor.name) {
+          case 'Float32Array':
+          case 'Array':
+            uniformType = `${value.length}fv`
+            break
+          case 'HTMLImageElement':
             uniformType = '1i'
-            uniformValue = this.createTexture(key, value.value)
-          } else {
-            uniformType = value.type
-            uniformValue = value.value
-          }
-          break
-      }
+            uniformValue = this.createTexture(key, value)
+            break
+          case 'Object':
+            if (value.type === 'image') {
+              uniformType = '1i'
+              uniformValue = this.createTexture(key, value.value)
+            } else {
+              uniformType = value.type
+              uniformValue = value.value
+            }
+            break
+        }
+        break
     }
 
     if (!uniformType) {
