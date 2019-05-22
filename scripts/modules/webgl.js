@@ -1,5 +1,6 @@
 import matIV from './minMatrix.js'
 import noneVert from '../../shaders/template/none.vert'
+import blurFrag from '../../shaders/postprocessing/blur.frag'
 
 const PI2 = Math.PI * 2
 const noneAttribute = {
@@ -16,14 +17,15 @@ class Program {
 
     const {
       gl,
-      framebuffers
+      framebuffers,
+      bindFramebuffer
     } = webgl
 
     this.gl = gl
     this.framebuffers = framebuffers
+    this.bindFramebuffer = bindFramebuffer
 
     const {
-      framebuffer,
       vertexShader = noneVert,
       fragmentShaderSelector,
       fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
@@ -287,9 +289,47 @@ class Program {
   }
 }
 
+class Blur extends Program {
+  constructor (webgl) {
+    const option = {
+      fragmentShader: blurFrag,
+      uniforms: {
+        texture: {
+          type: 'framebuffer'
+        },
+        radius: 0,
+        isHorizontal: false
+      },
+      hasResolution: true,
+      hasCamera: false,
+      hasLight: false
+    }
+
+    super(webgl, option)
+  }
+
+  apply (inFramebufferKey, outFramebufferKey, radius) {
+    this.use()
+
+    const iterations = 8
+    for (let i = 0; i < iterations; i++) {
+      this.bindFramebuffer(i < iterations - 1 ? outFramebufferKey : null)
+      this.setFramebufferUniform('texture', inFramebufferKey)
+      this.setUniform('radius', (iterations - 1 - i) * radius)
+      this.setUniform('isHorizontal', i % 2 === 0)
+      this.draw()
+
+      const t = outFramebufferKey
+      outFramebufferKey = inFramebufferKey
+      inFramebufferKey = t
+    }
+  }
+}
+
 export default class Webgl {
   constructor (option) {
     this.programs = {}
+    this.effects = {}
     this.framebuffers = {}
     this.mMatrix = matIV.identity(matIV.create())
     this.vMatrix = matIV.identity(matIV.create())
@@ -310,6 +350,7 @@ export default class Webgl {
       ambientColor = [0.1, 0.1, 0.1],
       clearedColor,
       programs = {},
+      effects = [],
       framebuffers = [],
       tick,
       onResize,
@@ -334,6 +375,10 @@ export default class Webgl {
 
     Object.keys(programs).forEach(key => {
       this.createProgram(key, programs[key])
+    })
+
+    effects.forEach(key => {
+      this.createEffect(key)
     })
 
     this.initSize()
@@ -374,6 +419,16 @@ export default class Webgl {
 
   createProgram (key, option) {
     this.programs[key] = new Program(this, option)
+  }
+
+  createEffect (key) {
+    let effect
+    if (key === 'blur') {
+      effect = new Blur(this)
+    } else {
+      return
+    }
+    this.effects[key] = effect
   }
 
   createFramebuffer (key, width = this.canvas.width, height = this.canvas.height) {
@@ -453,6 +508,14 @@ export default class Webgl {
 
     Object.keys(this.programs).forEach(key => {
       const program = this.programs[key]
+      if (program.hasResolution) {
+        program.use()
+        program.setUniform('resolution', [width, height])
+      }
+    })
+
+    Object.keys(this.effects).forEach(key => {
+      const program = this.effects[key]
       if (program.hasResolution) {
         program.use()
         program.setUniform('resolution', [width, height])

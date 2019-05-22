@@ -5,7 +5,6 @@ import mainVert from '../shaders/main.vert'
 import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
-import blurFrag from '../shaders/postprocessing/blur.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -91,24 +90,14 @@ loadImage([image, image2]).then(([img, img2]) => {
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
         isTransparent: true
-      },
-      blur: {
-        fragmentShader: blurFrag,
-        uniforms: {
-          texture: {
-            type: 'framebuffer'
-          },
-          radius: 0,
-          isHorizontal: false
-        },
-        hasResolution: true
       }
     },
+    effects: [
+      'blur'
+    ],
     framebuffers: ['1', '2'],
     isAutoStart: false
   })
-
-  const iterations = 8
 
   const draw = time => {
     let writeBuffer = '1'
@@ -130,22 +119,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
-    {
-      const program = webgl.programs['blur']
-      program.use()
-
-      for (let i = 0; i < iterations; i++) {
-        const t = writeBuffer
-        writeBuffer = readBuffer
-        readBuffer = t
-
-        webgl.bindFramebuffer(i < iterations - 1 ? writeBuffer : null)
-        program.setFramebufferUniform('texture', readBuffer)
-        program.setUniform('radius', (iterations - 1 - i) * (Math.sin(time * 12) * 0.5 + 0.5))
-        program.setUniform('isHorizontal', i % 2 === 0)
-        program.draw()
-      }
-    }
+    webgl.effects['blur'].apply(writeBuffer, readBuffer, (Math.sin(time * 12) * 0.5 + 0.5))
   }
 
   animate(draw, {
