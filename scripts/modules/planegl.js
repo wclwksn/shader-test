@@ -57,7 +57,7 @@ export default class Planegl {
     const { gl } = this
 
     const program = gl.createProgram()
-    gl.attachShader(program, this.createShader('VERTEX_SHADER', 'attribute vec3 position;varying vec4 vPosition;void main(){gl_Position=vPosition=vec4(position,1.);}'))
+    gl.attachShader(program, this.createShader('VERTEX_SHADER', 'attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}'))
     gl.attachShader(program, this.createShader('FRAGMENT_SHADER', fragmentShader))
     gl.linkProgram(program)
 
@@ -93,9 +93,9 @@ export default class Planegl {
     const location = gl.getAttribLocation(this.program, 'position')
 
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, 0, -1, -1, 0, 1, 1, 0, 1, -1, 0]), gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, -1, -1, 1, 1, 1, -1]), gl.STATIC_DRAW)
     gl.enableVertexAttribArray(location)
-    gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0)
+    gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0)
   }
 
   createUniform (data) {
