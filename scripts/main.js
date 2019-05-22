@@ -108,6 +108,8 @@ loadImage([image, image2]).then(([img, img2]) => {
     isAutoStart: false
   })
 
+  const iterations = 8
+
   const draw = time => {
     let writeBuffer = '1'
     let readBuffer = '2'
@@ -132,14 +134,14 @@ loadImage([image, image2]).then(([img, img2]) => {
       const program = webgl.programs['blur']
       program.use()
 
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < iterations; i++) {
         const t = writeBuffer
         writeBuffer = readBuffer
         readBuffer = t
 
-        webgl.bindFramebuffer(i < 1 ? writeBuffer : null)
+        webgl.bindFramebuffer(i < iterations - 1 ? writeBuffer : null)
         program.setFramebufferUniform('texture', readBuffer)
-        program.setUniform('radius', mix(1, 100, Math.sin(time * 12) * 0.5 + 0.5))
+        program.setUniform('radius', (iterations - 1 - i) * (Math.sin(time * 12) * 0.5 + 0.5))
         program.setUniform('isHorizontal', i % 2 === 0)
         program.draw()
       }
