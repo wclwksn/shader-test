@@ -1,4 +1,5 @@
-import Webgl, { loadImage } from './modules/webgl'
+import Webgl from './modules/webgl'
+import loadImage from './modules/loadImage'
 import { animate } from './modules/animation'
 import { mix } from './modules/math'
 import mainVert from '../shaders/main.vert'
@@ -119,7 +120,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
-    webgl.effects['blur'].apply(writeBuffer, readBuffer, (Math.sin(time * 12) * 0.5 + 0.5))
+    webgl.effects['blur'].add(writeBuffer, readBuffer, (Math.sin(time * 12) * 0.5 + 0.5))
   }
 
   animate(draw, {
