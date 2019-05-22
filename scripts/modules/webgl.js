@@ -1,27 +1,30 @@
 import matIV from './minMatrix.js'
-import fillVertexShader from '../../shaders/modules/fill.vert'
+import noneVert from '../../shaders/template/none.vert'
 
 const PI2 = Math.PI * 2
-const fillAttribute = {
-  value: [
-    -1, 1, 0,
-    -1, -1, 0,
-    1, 1, 0,
-    1, -1, 0
-  ],
-  stride: 3
+const noneAttribute = {
+  value: [-1, 1, -1, -1, 1, 1, 1, -1],
+  stride: 2
 }
 let textureIndex = -1
 
 class Program {
-  constructor (gl, option) {
+  constructor (webgl, option) {
     this.attributes = {}
     this.uniforms = {}
     this.textureIndexes = {}
 
     const {
+      gl,
+      framebuffers
+    } = webgl
+
+    this.gl = gl
+    this.framebuffers = framebuffers
+
+    const {
       framebuffer,
-      vertexShader = fillVertexShader,
+      vertexShader = noneVert,
       fragmentShaderSelector,
       fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
       attributes,
@@ -36,7 +39,6 @@ class Program {
     } = option
     const isWhole = !option.vertexShader
 
-    this.gl = gl
     this.mode = mode
     this.drawType = drawType
     this.isTransparent = isTransparent
@@ -139,14 +141,14 @@ class Program {
 
   createWholeAttribute () {
     this.createAttribute({
-      position: fillAttribute
+      position: noneAttribute
     })
   }
 
   createUniform (data) {
     const mergedData = Object.assign({}, data)
 
-    if (this.hasResolution && !mergedData.resolution) mergedData.resolution = [0, 0]
+    if (this.hasResolution && !mergedData.resolution) mergedData.resolution = [1, 1]
     if (this.hasTime && !mergedData.time) mergedData.time = 0
     if (this.hasCamera) {
       mergedData.mvpMatrix = new Float32Array(16)
@@ -221,6 +223,14 @@ class Program {
     this.gl[type](...args)
   }
 
+  setTextureUniform (key, textureKey) {
+    this.setUniform(key, this.textureIndexes[textureKey])
+  }
+
+  setFramebufferUniform (key, framebufferKey) {
+    this.setUniform(key, this.framebuffers[framebufferKey].textureIndex)
+  }
+
   createTexture (key, el) {
     const { gl } = this
     const texture = gl.createTexture()
@@ -286,6 +296,7 @@ export default class Webgl {
       ambientColor = [0.1, 0.1, 0.1],
       clearedColor,
       programs = {},
+      framebuffers = [],
       tick,
       onResize,
       isAutoStart = true
@@ -311,9 +322,23 @@ export default class Webgl {
       this.createProgram(key, programs[key])
     })
 
-    if (clearedColor) this.clearColor(clearedColor)
-
     this.initSize()
+
+    switch (framebuffers.constructor.name) {
+      case 'Array':
+        framebuffers.forEach(key => {
+          this.createFramebuffer(key)
+        })
+        break
+      case 'Object':
+        Object.keys(framebuffers).forEach(key => {
+          const { width, height } = framebuffers[key]
+          this.createFramebuffer(key, width, height)
+        })
+        break
+    }
+
+    if (clearedColor) this.clearColor(clearedColor)
 
     if (isAutoStart) this.start()
   }
@@ -334,10 +359,10 @@ export default class Webgl {
   }
 
   createProgram (key, option) {
-    this.programs[key] = new Program(this.gl, option)
+    this.programs[key] = new Program(this, option)
   }
 
-  createFramebuffer (key, width, height = width) {
+  createFramebuffer (key, width = this.canvas.width, height = this.canvas.height) {
     const { gl } = this
 
     const framebuffer = gl.createFramebuffer()

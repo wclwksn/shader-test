@@ -2007,6 +2007,10 @@ glsl-easings@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/glsl-easings/-/glsl-easings-1.0.0.tgz#d4f7b499915e922921f4f03d0f8089724bdf5b8e"
 
+glsl-fast-gaussian-blur@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/glsl-fast-gaussian-blur/-/glsl-fast-gaussian-blur-1.0.2.tgz#95bc77f644a22f06e5ed58e128697f8b17290b08"
+
 glsl-inject-defines@^1.0.1:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/glsl-inject-defines/-/glsl-inject-defines-1.0.3.tgz#dd1aacc2c17fcb2bd3fc32411c6633d0d7b60fd4"

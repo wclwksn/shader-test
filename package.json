@@ -11,6 +11,7 @@
   "dependencies": {
     "bezier-easing": "^2.1.0",
     "glsl-easings": "^1.0.0",
+    "glsl-fast-gaussian-blur": "^1.0.2",
     "glsl-noise": "^0.0.0",
     "glsl-random": "^0.0.5",
     "scripts": "^0.1.0"

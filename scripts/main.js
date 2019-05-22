@@ -1,10 +1,10 @@
 import Webgl, { loadImage } from './modules/webgl'
 import { animate } from './modules/animation'
-import mainVertexShader from '../shaders/main.vert'
-import mainFragmentShader from '../shaders/main.frag'
-import particleVertexShader from '../shaders/particle.vert'
-import particleFragmentShader from '../shaders/particle.frag'
-import toonFragmentShader from '../shaders/postprocessing/toon.frag'
+import mainVert from '../shaders/main.vert'
+import mainFrag from '../shaders/main.frag'
+import particleVert from '../shaders/particle.vert'
+import particleFrag from '../shaders/particle.frag'
+import blurFrag from '../shaders/postprocessing/blur.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -33,8 +33,8 @@ loadImage([image, image2]).then(([img, img2]) => {
     ambientColor: [0.2, 0.2, 0.2],
     programs: {
       main: {
-        vertexShader: mainVertexShader,
-        fragmentShader: mainFragmentShader,
+        vertexShader: mainVert,
+        fragmentShader: mainFrag,
         attributes: {
           position: {
             value: [
@@ -65,8 +65,8 @@ loadImage([image, image2]).then(([img, img2]) => {
         hasTime: true
       },
       particle: {
-        vertexShader: particleVertexShader,
-        fragmentShader: particleFragmentShader,
+        vertexShader: particleVert,
+        fragmentShader: particleFrag,
         attributes: {
           position: {
             value: particlePosition,
@@ -91,22 +91,31 @@ loadImage([image, image2]).then(([img, img2]) => {
         drawType: 'DYNAMIC_DRAW',
         isTransparent: true
       },
-      toon: {
-        fragmentShader: toonFragmentShader
+      blur: {
+        fragmentShader: blurFrag,
+        uniforms: {
+          texture: {
+            type: '1i'
+          },
+          direction: [0, 0]
+        },
+        hasResolution: true
       }
     },
+    framebuffers: ['1', '2'],
     isAutoStart: false
   })
 
-  webgl.createFramebuffer('scene', width, height)
-
-  webgl.programs['toon'].addUniform('texture', {
-    type: '1i',
-    value: webgl.framebuffers['scene'].textureIndex
-  })
+  const iterations = 8
+  let writeBuffer
+  let readBuffer
+  let t
 
   const draw = time => {
-    webgl.bindFramebuffer('scene')
+    writeBuffer = '1'
+    readBuffer = '2'
+
+    webgl.bindFramebuffer(writeBuffer)
 
     {
       const program = webgl.programs['main']
@@ -122,13 +131,22 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
-    webgl.bindFramebuffer(null)
-
     {
-      const program = webgl.programs['toon']
+      const program = webgl.programs['blur']
       program.use()
-      program.setUniform('time', time)
-      program.draw()
+
+      for (let i = 0; i < iterations; i++) {
+        t = writeBuffer
+        writeBuffer = readBuffer
+        readBuffer = t
+
+        const radius = (iterations - i - 1) * (Math.sin(time * 12) * 0.5 + 0.5)
+
+        webgl.bindFramebuffer(i < iterations - 1 ? writeBuffer : null)
+        program.setFramebufferUniform('texture', readBuffer)
+        program.setUniform('direction', i % 2 === 0 ? [radius, 0] : [0, radius])
+        program.draw()
+      }
     }
   }
 
