@@ -6,9 +6,7 @@ export class Blur extends Program {
     const option = {
       fragmentShader: blurFrag,
       uniforms: {
-        texture: {
-          type: 'framebuffer'
-        },
+        texture: 'framebuffer',
         radius: 0,
         isHorizontal: false
       },

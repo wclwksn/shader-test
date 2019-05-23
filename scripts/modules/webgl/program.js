@@ -160,12 +160,31 @@ export default class Program {
     let uniformType
     let uniformValue = value
 
+    const getTypeFromString = (type, value) => {
+      switch (type) {
+        case 'image':
+          uniformType = '1i'
+          uniformValue = this.createTexture(key, value)
+          break
+        case 'framebuffer':
+          uniformType = '1i'
+          uniformValue = value
+          break
+        default:
+          uniformType = type
+          uniformValue = value
+      }
+    }
+
     switch (typeof value) {
       case 'number':
         uniformType = '1f'
         break
       case 'boolean':
         uniformType = '1i'
+        break
+      case 'string':
+        getTypeFromString(value)
         break
       case 'object':
         switch (value.constructor.name) {
@@ -184,19 +203,7 @@ export default class Program {
             uniformValue = this.createTexture(key, value)
             break
           case 'Object':
-            switch (value.type) {
-              case 'image':
-                uniformType = '1i'
-                uniformValue = this.createTexture(key, value.value)
-                break
-              case 'framebuffer':
-                uniformType = '1i'
-                uniformValue = value.value
-                break
-              default:
-                uniformType = value.type
-                uniformValue = value.value
-            }
+            getTypeFromString(value.type, value.value)
             break
         }
         break
