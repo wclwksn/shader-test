@@ -60,7 +60,8 @@ loadImage([image, image2]).then(([img, img2]) => {
           image: img,
           imageResolution: [img.width, img.height],
           image2: img2,
-          imageResolution2: [img2.width, img2.height]
+          imageResolution2: [img2.width, img2.height],
+          particle: 'framebuffer'
         },
         hasResolution: true,
         hasTime: true
@@ -107,13 +108,6 @@ loadImage([image, image2]).then(([img, img2]) => {
     webgl.bindFramebuffer(writeBuffer)
 
     {
-      const program = webgl.programs['main']
-      program.use()
-      program.setUniform('time', time)
-      program.draw()
-    }
-
-    {
       const program = webgl.programs['particle']
       program.use()
       program.setUniform('time', time)
@@ -121,6 +115,16 @@ loadImage([image, image2]).then(([img, img2]) => {
     }
 
     webgl.effects['blur'].add(writeBuffer, readBuffer, (Math.sin(time * 12) * 0.5 + 0.5))
+
+    webgl.unbindFramebuffer()
+
+    {
+      const program = webgl.programs['main']
+      program.use()
+      program.setUniform('time', time)
+      program.setFramebufferUniform('particle', writeBuffer)
+      program.draw()
+    }
   }
 
   animate(draw, {

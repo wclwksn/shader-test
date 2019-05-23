@@ -170,6 +170,12 @@ export default class Webgl {
     gl.bindFramebuffer(gl.FRAMEBUFFER, key ? this.framebuffers[key].framebuffer : null)
   }
 
+  unbindFramebuffer () {
+    const { gl } = this
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  }
+
   clearColor (clearedColor = [0, 0, 0, 1]) {
     this.gl.clearColor(...clearedColor)
   }
