@@ -3,18 +3,22 @@ precision highp float;
 uniform vec2 resolution;
 uniform sampler2D image;
 uniform sampler2D image2;
+uniform sampler2D particle;
+uniform sampler2D specular;
 uniform vec2 imageResolution;
 uniform vec2 imageResolution2;
 uniform float time;
 
-varying vec2 vUv;
-
 #pragma glslify: adjustRatio = require(./modules/adjustRatio.glsl)
 #pragma glslify: getExistence = require(./getExistence.glsl)
 
+const float brightness = 4.;
+
 void main() {
   // discard; // * debug
-  vec2 uv = vUv;
+  vec2 uv = gl_FragCoord.st / resolution;
+  vec2 frameBufferUv = uv;
+  uv.y = 1. - uv.y;
 
   float existence = getExistence(uv, time);
   existence = smoothstep(0.95, 1., existence);
@@ -24,8 +28,16 @@ void main() {
 
   vec3 color = texture2D(image, adjustRatio(uv, imageResolution, resolution)).rgb;
   vec3 color2 = texture2D(image2, adjustRatio(uv, imageResolution2, resolution)).rgb;
+  vec3 particleColor = texture2D(particle, frameBufferUv).rgb;
+  vec3 specularColor = texture2D(specular, frameBufferUv).rgb * brightness;
 
-  gl_FragColor = vec4(mix(color2, color, alpha), 1.);
+  vec3 destColor = mix(color2, color, alpha);
+  destColor += particleColor;
+  destColor += specularColor;
+
+  gl_FragColor = vec4(destColor, 1.);
+  // gl_FragColor = vec4(particleColor, 1.); // * debug
+  // gl_FragColor = vec4(specularColor, 1.); // * debug
   // gl_FragColor = vec4(color, 1.); // * debug
   // gl_FragColor = vec4(vec3(existence), 1.); // * debug
 }

@@ -1,8 +1,10 @@
 import noneVert from '../../../shaders/template/none.vert'
 
-const noneAttribute = {
-  value: [-1, 1, -1, -1, 1, 1, 1, -1],
-  stride: 2
+export const noneAttribute = {
+  position: {
+    value: [-1, 1, -1, -1, 1, 1, 1, -1],
+    stride: 2
+  }
 }
 
 export default class Program {
@@ -26,7 +28,9 @@ export default class Program {
       drawType = 'STATIC_DRAW',
       isTransparent = false,
       hasCamera = true,
-      hasLight = true
+      hasLight = true,
+      isClear = false,
+      clearedColor
     } = option
     const isWhole = !option.vertexShader
 
@@ -37,6 +41,8 @@ export default class Program {
     this.hasCamera = hasCamera
     this.hasLight = hasLight
     this.hasTime = hasTime
+    this.isClear = isClear || !!clearedColor
+    this.clearedColor = this.isClear ? clearedColor || [0, 0, 0, 0] : null
 
     this.createProgram(vertexShader, fragmentShader)
 
@@ -131,9 +137,7 @@ export default class Program {
   }
 
   createWholeAttribute () {
-    this.createAttribute({
-      position: noneAttribute
-    })
+    this.createAttribute(noneAttribute)
   }
 
   createUniform (data) {
@@ -160,12 +164,31 @@ export default class Program {
     let uniformType
     let uniformValue = value
 
+    const getTypeFromString = (type, value) => {
+      switch (type) {
+        case 'image':
+          uniformType = '1i'
+          uniformValue = this.createTexture(key, value)
+          break
+        case 'framebuffer':
+          uniformType = '1i'
+          uniformValue = value
+          break
+        default:
+          uniformType = type
+          uniformValue = value
+      }
+    }
+
     switch (typeof value) {
       case 'number':
         uniformType = '1f'
         break
       case 'boolean':
         uniformType = '1i'
+        break
+      case 'string':
+        getTypeFromString(value)
         break
       case 'object':
         switch (value.constructor.name) {
@@ -184,19 +207,7 @@ export default class Program {
             uniformValue = this.createTexture(key, value)
             break
           case 'Object':
-            switch (value.type) {
-              case 'image':
-                uniformType = '1i'
-                uniformValue = this.createTexture(key, value.value)
-                break
-              case 'framebuffer':
-                uniformType = '1i'
-                uniformValue = value.value
-                break
-              default:
-                uniformType = value.type
-                uniformValue = value.value
-            }
+            getTypeFromString(value.type, value.value)
             break
         }
         break
@@ -267,6 +278,11 @@ export default class Program {
   draw () {
     const { gl } = this.webgl
     const { attributes } = this
+
+    if (this.isClear) {
+      gl.clearColor(...this.clearedColor)
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    }
 
     if (this.isTransparent) gl.enable(gl.BLEND)
     else gl.disable(gl.BLEND)

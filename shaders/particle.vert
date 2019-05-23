@@ -60,6 +60,6 @@ void main() {
   // vColor.a = 1.; // * debug
 
   gl_Position = mvpMatrix * cPosition;
-  gl_PointSize = mix(1., 4., cPosition.z / maxZ) * mix(1., 2., existence);
+  gl_PointSize = mix(1., 4., cPosition.z / maxZ) * mix(1., 2.5, existence);
   // gl_PointSize = 1.; // * debug
 }

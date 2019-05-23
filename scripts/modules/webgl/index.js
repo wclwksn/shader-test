@@ -25,6 +25,7 @@ export default class Webgl {
       lightDirection = [-1, 1, 1],
       eyeDirection = cameraPosition,
       ambientColor = [0.1, 0.1, 0.1],
+      isClear = false,
       clearedColor,
       programs = {},
       effects = [],
@@ -48,7 +49,8 @@ export default class Webgl {
 
     this.tick = tick
     this.onResize = onResize
-    this.clearedColor = clearedColor
+    this.isClear = isClear || !!clearedColor
+    this.clearedColor = this.isClear ? clearedColor || [0, 0, 0, 0] : null
 
     Object.keys(programs).forEach(key => {
       this.createProgram(key, programs[key])
@@ -73,8 +75,6 @@ export default class Webgl {
         })
         break
     }
-
-    if (clearedColor) this.clearColor(clearedColor)
 
     if (isAutoStart) this.start()
   }
@@ -170,8 +170,10 @@ export default class Webgl {
     gl.bindFramebuffer(gl.FRAMEBUFFER, key ? this.framebuffers[key].framebuffer : null)
   }
 
-  clearColor (clearedColor = [0, 0, 0, 1]) {
-    this.gl.clearColor(...clearedColor)
+  unbindFramebuffer () {
+    const { gl } = this
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
   setSize () {
@@ -288,7 +290,10 @@ export default class Webgl {
     const render = timestamp => {
       const time = (timestamp - initialTimestamp) / 1000
 
-      if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+      if (this.isClear) {
+        gl.clearColor(...this.clearedColor)
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+      }
 
       if (this.tick) this.tick(time)
 
