@@ -1,5 +1,6 @@
-import Program from './program'
+import Program, { noneAttribute } from './program'
 import blurFrag from '../../../shaders/postprocessing/blur.frag'
+import specularFrag from '../../../shaders/specular.frag'
 
 export class Blur extends Program {
   constructor (webgl) {
@@ -18,7 +19,7 @@ export class Blur extends Program {
     super(webgl, option)
   }
 
-  add (inFramebufferKey, outFramebufferKey, radius) {
+  draw (inFramebufferKey, outFramebufferKey, radius) {
     this.use()
 
     const iterations = 8
@@ -27,11 +28,38 @@ export class Blur extends Program {
       this.setFramebufferUniform('texture', inFramebufferKey)
       this.setUniform('radius', (iterations - 1 - i) * radius)
       this.setUniform('isHorizontal', i % 2 === 0)
-      this.draw()
+      super.draw()
 
       const t = outFramebufferKey
       outFramebufferKey = inFramebufferKey
       inFramebufferKey = t
     }
+  }
+}
+
+export class Bloom extends Program {
+  constructor (webgl) {
+    const option = {
+      fragmentShader: specularFrag,
+      attributes: noneAttribute,
+      uniforms: {
+        texture: 'framebuffer'
+      },
+      hasResolution: true
+    }
+
+    if (!webgl.effects['blur']) webgl.createEffect('blur')
+
+    super(webgl, option)
+  }
+
+  draw (readFramebufferKey, inFramebufferKey, outFramebufferKey, radius) {
+    this.webgl.bindFramebuffer(outFramebufferKey)
+
+    this.use()
+    this.setFramebufferUniform('texture', readFramebufferKey)
+    super.draw()
+
+    this.webgl.effects['blur'].draw(outFramebufferKey, inFramebufferKey, radius)
   }
 }
