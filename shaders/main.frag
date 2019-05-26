@@ -10,6 +10,7 @@ uniform vec2 imageResolution2;
 uniform float time;
 
 #pragma glslify: adjustRatio = require(./modules/adjustRatio.glsl)
+#pragma glslify: vignette = require(./modules/vignette.glsl)
 #pragma glslify: getExistence = require(./getExistence.glsl)
 
 const float brightness = 4.;
@@ -19,6 +20,8 @@ void main() {
   vec2 uv = gl_FragCoord.st / resolution;
   vec2 frameBufferUv = uv;
   uv.y = 1. - uv.y;
+
+  vec2 nPosition = uv * 2. - 1.;
 
   float existence = getExistence(uv, time);
   existence = smoothstep(0.95, 1., existence);
@@ -32,6 +35,9 @@ void main() {
   vec3 specularColor = texture2D(specular, frameBufferUv).rgb * brightness;
 
   vec3 destColor = mix(color2, color, alpha);
+
+  destColor = vignette(destColor, nPosition, 1.5);
+
   destColor += particleColor;
   destColor += specularColor;
 
