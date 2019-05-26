@@ -54,12 +54,12 @@ export class Bloom extends Program {
   }
 
   draw (readFramebufferKey, inFramebufferKey, outFramebufferKey, radius) {
-    this.webgl.bindFramebuffer(outFramebufferKey)
+    this.webgl.bindFramebuffer(inFramebufferKey)
 
     this.use()
     this.setFramebufferUniform('texture', readFramebufferKey)
     super.draw()
 
-    this.webgl.effects['blur'].draw(outFramebufferKey, inFramebufferKey, radius)
+    this.webgl.effects['blur'].draw(inFramebufferKey, readFramebufferKey, radius)
   }
 }
