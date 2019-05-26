@@ -1,14 +1,11 @@
 import Webgl from './modules/webgl'
-import { noneAttribute } from './modules/webgl/program'
 import loadImage from './modules/loadImage'
 import { animate } from './modules/animation'
-import { mix } from './modules/math'
 
 import mainVert from '../shaders/main.vert'
 import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
-import specularFrag from '../shaders/specular.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -57,20 +54,11 @@ loadImage([image, image2]).then(([img, img2]) => {
           image: img,
           imageResolution: [img.width, img.height]
         },
-        hasResolution: true,
         hasTime: true,
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
         isTransparent: true,
         isClear: true
-      },
-      specular: {
-        fragmentShader: specularFrag,
-        attributes: noneAttribute,
-        uniforms: {
-          texture: 'framebuffer'
-        },
-        hasResolution: true
       },
       main: {
         vertexShader: mainVert,
@@ -91,24 +79,22 @@ loadImage([image, image2]).then(([img, img2]) => {
           imageResolution: [img.width, img.height],
           image2: img2,
           imageResolution2: [img2.width, img2.height],
-          particle: 'framebuffer',
-          specular: 'framebuffer'
+          particle: 'framebuffer'
         },
-        hasResolution: true,
         hasTime: true
       }
     },
     effects: [
-      'blur'
+      'bloom'
     ],
     framebuffers: ['particle', '1', '2'],
     isAutoStart: false
   })
 
-  const draw = time => {
-    let writeBuffer = '1'
-    let readBuffer = '2'
+  const outFramebufferKey = '1'
+  const inFramebufferKey = '2'
 
+  const draw = time => {
     webgl.bindFramebuffer('particle')
 
     {
@@ -118,16 +104,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
-    webgl.bindFramebuffer(writeBuffer)
-
-    {
-      const program = webgl.programs['specular']
-      program.use()
-      program.setFramebufferUniform('texture', 'particle')
-      program.draw()
-    }
-
-    webgl.effects['blur'].add(writeBuffer, readBuffer, 0.4)
+    webgl.effects['bloom'].draw('particle', inFramebufferKey, outFramebufferKey, 0.4)
 
     webgl.unbindFramebuffer()
 
@@ -135,8 +112,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       const program = webgl.programs['main']
       program.use()
       program.setUniform('time', time)
-      program.setFramebufferUniform('particle', 'particle')
-      program.setFramebufferUniform('specular', writeBuffer)
+      program.setFramebufferUniform('particle', outFramebufferKey)
       program.draw()
     }
   }

@@ -1,6 +1,6 @@
 import noneVert from '../../../shaders/template/none.vert'
 
-export const noneAttribute = {
+const noneAttribute = {
   position: {
     value: [-1, 1, -1, -1, 1, 1, 1, -1],
     stride: 2
@@ -22,7 +22,7 @@ export default class Program {
       fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
       attributes,
       uniforms,
-      hasResolution = false,
+      hasResolution = true,
       hasTime = false,
       mode = 'TRIANGLE_STRIP',
       drawType = 'STATIC_DRAW',
