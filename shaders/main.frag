@@ -2,10 +2,9 @@ precision highp float;
 
 uniform vec2 resolution;
 uniform sampler2D image;
-uniform sampler2D image2;
 uniform sampler2D particle;
+uniform sampler2D next;
 uniform vec2 imageResolution;
-uniform vec2 imageResolution2;
 uniform float time;
 
 #pragma glslify: adjustRatio = require(./modules/adjustRatio.glsl)
@@ -27,7 +26,7 @@ void main() {
   // alpha = 1. - existence; // * debug
 
   vec3 color = texture2D(image, adjustRatio(uv, imageResolution, resolution)).rgb;
-  vec3 color2 = texture2D(image2, adjustRatio(uv, imageResolution2, resolution)).rgb;
+  vec3 color2 = texture2D(next, frameBufferUv).rgb;
   vec3 particleColor = texture2D(particle, frameBufferUv).rgb;
 
   vec3 destColor = mix(color2, color, alpha);
@@ -40,4 +39,5 @@ void main() {
   // gl_FragColor = vec4(particleColor, 1.); // * debug
   // gl_FragColor = vec4(color, 1.); // * debug
   // gl_FragColor = vec4(vec3(existence), 1.); // * debug
+  // gl_FragColor = texture2D(next, frameBufferUv); // * debug
 }

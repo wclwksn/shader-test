@@ -25,7 +25,7 @@ export default class Webgl {
       lightDirection = [-1, 1, 1],
       eyeDirection = cameraPosition,
       ambientColor = [0.1, 0.1, 0.1],
-      isClear = false,
+      isClear = true,
       clearedColor,
       programs = {},
       effects = [],

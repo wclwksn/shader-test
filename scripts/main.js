@@ -1,11 +1,13 @@
 import Webgl from './modules/webgl'
 import loadImage from './modules/loadImage'
-import { animate } from './modules/animation'
+import { animate, cubicOut } from './modules/animation'
+import { mix, clamp } from './modules/math'
 
 import mainVert from '../shaders/main.vert'
 import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
+import nextFrag from '../shaders/next.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -57,8 +59,28 @@ loadImage([image, image2]).then(([img, img2]) => {
         hasTime: true,
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
-        isTransparent: true,
-        isClear: true
+        isTransparent: true
+      },
+      next: {
+        vertexShader: mainVert,
+        fragmentShader: nextFrag,
+        attributes: {
+          position: {
+            value: [
+              -halfWidth, halfHeight, 0,
+              -halfWidth, -halfHeight, 0,
+              halfWidth, halfHeight, 0,
+              halfWidth, -halfHeight, 0
+            ],
+            stride: 3
+          }
+        },
+        uniforms: {
+          image: img2,
+          imageResolution: [img2.width, img2.height]
+        },
+        hasTime: true,
+        isTransparent: true
       },
       main: {
         vertexShader: mainVert,
@@ -77,9 +99,8 @@ loadImage([image, image2]).then(([img, img2]) => {
         uniforms: {
           image: img,
           imageResolution: [img.width, img.height],
-          image2: img2,
-          imageResolution2: [img2.width, img2.height],
-          particle: 'framebuffer'
+          particle: 'framebuffer',
+          next: 'framebuffer'
         },
         hasTime: true
       }
@@ -87,12 +108,14 @@ loadImage([image, image2]).then(([img, img2]) => {
     effects: [
       'bloom'
     ],
-    framebuffers: ['particle', '1', '2'],
+    framebuffers: [
+      'particle',
+      'next',
+      '1',
+      '2'
+    ],
     isAutoStart: false
   })
-
-  const outFramebufferKey = '1'
-  const inFramebufferKey = '2'
 
   const draw = time => {
     webgl.bindFramebuffer('particle')
@@ -104,7 +127,20 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
-    webgl.effects['bloom'].draw('particle', inFramebufferKey, outFramebufferKey, 0.4)
+    webgl.effects['bloom'].draw('particle', '2', '1', 0.4)
+
+    webgl.bindFramebuffer('next')
+
+    {
+      const cTime = cubicOut(clamp((time - 0.1) * 1.2, 0, 1))
+
+      const program = webgl.programs['next']
+      program.use()
+      program.setUniform('time', cTime)
+      program.draw()
+
+      webgl.effects['blur'].draw('next', '2', mix(2, 0, cTime))
+    }
 
     webgl.unbindFramebuffer()
 
@@ -112,7 +148,8 @@ loadImage([image, image2]).then(([img, img2]) => {
       const program = webgl.programs['main']
       program.use()
       program.setUniform('time', time)
-      program.setFramebufferUniform('particle', outFramebufferKey)
+      program.setFramebufferUniform('particle', '1')
+      program.setFramebufferUniform('next', '2')
       program.draw()
     }
   }

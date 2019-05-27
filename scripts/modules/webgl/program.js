@@ -29,7 +29,7 @@ export default class Program {
       isTransparent = false,
       hasCamera = true,
       hasLight = true,
-      isClear = false,
+      isClear = true,
       clearedColor
     } = option
     const isWhole = !option.vertexShader

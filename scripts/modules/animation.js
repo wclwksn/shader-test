@@ -1,5 +1,10 @@
 import * as easingFunctions from './easing'
 
+export function cubicOut (t) {
+  const f = t - 1
+  return f * f * f + 1
+}
+
 /**
  * アニメーション関数
  *
