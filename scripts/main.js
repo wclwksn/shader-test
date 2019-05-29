@@ -59,7 +59,7 @@ loadImage([image, image2]).then(([img, img2]) => {
         hasTime: true,
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
-        isTransparent: true
+        isTransparent: false
       },
       next: {
         vertexShader: mainVert,
