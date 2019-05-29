@@ -82,27 +82,6 @@ loadImage([image, image2]).then(([img, img2]) => {
         hasTime: true,
         isTransparent: true
       },
-      next: {
-        vertexShader: mainVert,
-        fragmentShader: nextFrag,
-        attributes: {
-          position: {
-            value: [
-              -halfWidth, halfHeight, 0,
-              -halfWidth, -halfHeight, 0,
-              halfWidth, halfHeight, 0,
-              halfWidth, -halfHeight, 0
-            ],
-            stride: 3
-          }
-        },
-        uniforms: {
-          image: img2,
-          imageResolution: [img2.width, img2.height]
-        },
-        hasTime: true,
-        isTransparent: true
-      },
       main: {
         vertexShader: mainVert,
         fragmentShader: mainFrag,
