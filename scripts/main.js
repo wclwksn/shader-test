@@ -102,7 +102,8 @@ loadImage([image, image2]).then(([img, img2]) => {
           particle: 'framebuffer',
           next: 'framebuffer'
         },
-        hasTime: true
+        hasTime: true,
+        isTransparent: true
       }
     },
     effects: [
