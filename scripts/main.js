@@ -100,7 +100,8 @@ loadImage([image, image2]).then(([img, img2]) => {
           image: img2,
           imageResolution: [img2.width, img2.height]
         },
-        hasTime: true
+        hasTime: true,
+        isTransparent: true
       },
       main: {
         vertexShader: mainVert,
@@ -122,7 +123,8 @@ loadImage([image, image2]).then(([img, img2]) => {
           particle: 'framebuffer',
           next: 'framebuffer'
         },
-        hasTime: true
+        hasTime: true,
+        isTransparent: true
       }
     },
     effects: [
