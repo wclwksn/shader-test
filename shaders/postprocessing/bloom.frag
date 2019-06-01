@@ -8,7 +8,8 @@ const float brightness = 4.;
 
 void main() {
   vec2 uv = gl_FragCoord.st / resolution;
-  vec3 color = texture2D(texture, uv).rgb;
-  color += texture2D(specular, uv).rgb * brightness;
-  gl_FragColor = vec4(color, 1.);
+  vec4 color = texture2D(texture, uv);
+  color.rgb += texture2D(specular, uv).rgb * brightness;
+  gl_FragColor = color;
+  // gl_FragColor = texture2D(specular, uv); // * debug
 }

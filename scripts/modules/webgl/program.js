@@ -27,6 +27,7 @@ export default class Program {
       mode = 'TRIANGLE_STRIP',
       drawType = 'STATIC_DRAW',
       isTransparent = false,
+      isAdditive = false,
       hasCamera = true,
       hasLight = true,
       isClear = true,
@@ -37,12 +38,13 @@ export default class Program {
     this.mode = mode
     this.drawType = drawType
     this.isTransparent = isTransparent
+    this.isAdditive = isAdditive
     this.hasResolution = hasResolution
     this.hasCamera = hasCamera
     this.hasLight = hasLight
     this.hasTime = hasTime
     this.isClear = isClear || !!clearedColor
-    this.clearedColor = this.isClear ? clearedColor || [0, 0, 0, 0] : null
+    this.clearedColor = clearedColor || [0, 0, 0, 0]
 
     this.createProgram(vertexShader, fragmentShader)
 
@@ -52,8 +54,6 @@ export default class Program {
     else if (attributes) this.createAttribute(attributes)
 
     if (uniforms) this.createUniform(uniforms)
-
-    if (isTransparent) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
   }
 
   createProgram (vertexShader, fragmentShader) {
@@ -284,8 +284,15 @@ export default class Program {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     }
 
-    if (this.isTransparent) gl.enable(gl.BLEND)
-    else gl.disable(gl.BLEND)
+    if (this.isTransparent) {
+      gl.enable(gl.BLEND)
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    } else if (this.isAdditive) {
+      gl.enable(gl.BLEND)
+      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE, gl.ONE, gl.ONE)
+    } else {
+      gl.disable(gl.BLEND)
+    }
 
     Object.keys(attributes).forEach(key => {
       this.setAttribute(key)

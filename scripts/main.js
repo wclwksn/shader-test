@@ -106,7 +106,9 @@ loadImage([image, image2]).then(([img, img2]) => {
       }
     },
     effects: [
-      'bloom'
+      'bloom',
+      'blur',
+      'godray'
     ],
     framebuffers: [
       'particle',
@@ -132,7 +134,7 @@ loadImage([image, image2]).then(([img, img2]) => {
     webgl.bindFramebuffer('next')
 
     {
-      const cTime = cubicOut(clamp((time - 0.1) * 1.2, 0, 1))
+      const cTime = cubicOut(clamp((time - 0.2) * 1.2, 0, 1))
 
       const program = webgl.programs['next']
       program.use()
@@ -140,6 +142,18 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
 
       webgl.effects['blur'].draw('next', '2', mix(2, 0, cTime))
+
+      webgl.effects['godray'].draw(
+        'next',
+        'particle',
+        '2',
+        mix(60, 10, time),
+        [
+          webgl.canvas.width * 0.5,
+          mix(webgl.canvas.height, webgl.canvas.height * 0.5, time)
+        ],
+        mix(0.5, 0.02, time)
+      )
     }
 
     webgl.unbindFramebuffer()
