@@ -9,7 +9,7 @@ void main() {
   vec4 color = vColor;
 
 	vec2 p = gl_PointCoord * 2. - 1.;
-  color.a *= 1. - smoothstep(0.3, 1., length(p));
+  color.a *= 0.2 / length(p);
   if (color.a == 0.) discard;
 
   gl_FragColor = color;
