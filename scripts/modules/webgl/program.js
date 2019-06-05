@@ -107,9 +107,9 @@ export default class Program {
     const attribute = this.attributes[key] = {
       location,
       stride,
-      data,
-      count: value.length / stride
+      data
     }
+    this.count = this.count || value.length / stride
 
     const vbo = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
@@ -298,6 +298,6 @@ export default class Program {
       this.setAttribute(key)
     })
 
-    gl.drawArrays(gl[this.mode], 0, attributes.position.count)
+    gl.drawArrays(gl[this.mode], 0, this.count)
   }
 }

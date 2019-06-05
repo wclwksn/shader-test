@@ -2003,6 +2003,12 @@ globals@^11.1.0:
   version "11.11.0"
   resolved "https://registry.yarnpkg.com/globals/-/globals-11.11.0.tgz#dcf93757fa2de5486fbeed7118538adf789e9c2e"
 
+glsl-curl-noise@^0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/glsl-curl-noise/-/glsl-curl-noise-0.0.4.tgz#79c8b8f3d7bfe8a4d7565051a8b60879159549a3"
+  dependencies:
+    glsl-noise "0.0.0"
+
 glsl-easings@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/glsl-easings/-/glsl-easings-1.0.0.tgz#d4f7b499915e922921f4f03d0f8089724bdf5b8e"
@@ -2019,7 +2025,7 @@ glsl-inject-defines@^1.0.1:
     glsl-token-string "^1.0.1"
     glsl-tokenizer "^2.0.2"
 
-glsl-noise@^0.0.0:
+glsl-noise@0.0.0, glsl-noise@^0.0.0:
   version "0.0.0"
   resolved "https://registry.yarnpkg.com/glsl-noise/-/glsl-noise-0.0.0.tgz#367745f3a33382c0eeec4cb54b7e99cfc1d7670b"
 

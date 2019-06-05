@@ -30,6 +30,7 @@ export default class Webgl {
       programs = {},
       effects = [],
       framebuffers = [],
+      framebufferFloats = {},
       tick,
       onResize,
       isAutoStart = true
@@ -75,6 +76,11 @@ export default class Webgl {
         })
         break
     }
+
+    Object.keys(framebufferFloats).forEach(key => {
+      const { width, height } = framebufferFloats[key]
+      this.createFramebufferFloat(key, width, height)
+    })
 
     if (isAutoStart) this.start()
   }

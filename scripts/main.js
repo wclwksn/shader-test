@@ -8,6 +8,12 @@ import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
 import nextFrag from '../shaders/next.frag'
+import resetVelocityFrag from '../shaders/resetVelocity.frag'
+import resetPositionFrag from '../shaders/resetPosition.frag'
+import velocityFrag from '../shaders/velocity.frag'
+import positionFrag from '../shaders/position.frag'
+import curlParticleVert from '../shaders/curlParticle.vert'
+import curlParticleFrag from '../shaders/curlParticle.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -18,15 +24,25 @@ loadImage([image, image2]).then(([img, img2]) => {
   const height = canvas.clientHeight
   const halfWidth = width / 2
   const halfHeight = height / 2
+  const size = 300
+  const sizeUniform = [size, size]
   const particlePosition = []
   const particleNormal = []
   const particleUv = []
+  const curlUv = []
 
   for (let j = 0; j < height; j++) {
     for (let i = 0; i < width; i++) {
       particlePosition.push(i - halfWidth, j - halfHeight, 0)
       particleNormal.push((Math.random() * 2 - 1) * 0.1, (Math.random() * 2 - 1) * 0.1, 1)
       particleUv.push(i / width, 1 - j / height)
+    }
+  }
+
+
+  for (let j = 0; j < size; j++) {
+    for (let i = 0; i < size; i++) {
+      curlUv.push(i / size, 1 - j / size)
     }
   }
 
@@ -103,6 +119,57 @@ loadImage([image, image2]).then(([img, img2]) => {
           next: 'framebuffer'
         },
         hasTime: true
+      },
+      resetVelocity: {
+        fragmentShader: resetVelocityFrag,
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      resetPosition: {
+        fragmentShader: resetPositionFrag,
+        uniforms: {
+          size: sizeUniform
+        },
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      velocity: {
+        fragmentShader: velocityFrag,
+        uniforms: {
+          size: sizeUniform,
+          prevVelocityTexture: 'framebuffer'
+        },
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      position: {
+        fragmentShader: positionFrag,
+        uniforms: {
+          size: sizeUniform,
+          prevPositionTexture: 'framebuffer',
+          velocityTexture: 'framebuffer'
+        },
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      curl: {
+        vertexShader: curlParticleVert,
+        fragmentShader: curlParticleFrag,
+        attributes: {
+          uv: {
+            value: curlUv,
+            stride: 2
+          }
+        },
+        uniforms: {
+          positionTexture: 'framebuffer'
+        },
+        mode: 'POINTS',
+        isClear: false
       }
     },
     effects: [
@@ -116,24 +183,64 @@ loadImage([image, image2]).then(([img, img2]) => {
       '1',
       '2'
     ],
+    framebufferFloats: {
+      velocity0: {
+        width: size,
+        height: size
+      },
+      velocity1: {
+        width: size,
+        height: size
+      },
+      position0: {
+        width: size,
+        height: size
+      },
+      position1: {
+        width: size,
+        height: size
+      }
+    },
     isAutoStart: false
   })
 
-  const draw = time => {
-    webgl.bindFramebuffer('particle')
+  let loopCount = 0
+  let targetbufferIndex
+  let prevbufferIndex
 
+  targetbufferIndex = loopCount++ % 2
+
+  {
+    webgl.bindFramebuffer('velocity' + targetbufferIndex)
+
+    const program = webgl.programs['resetVelocity']
+    program.use()
+    program.draw()
+  }
+
+  {
+    webgl.bindFramebuffer('position' + targetbufferIndex)
+
+    const program = webgl.programs['resetPosition']
+    program.use()
+    program.draw()
+  }
+
+  const draw = time => {
     {
+      webgl.bindFramebuffer('particle')
+
       const program = webgl.programs['particle']
       program.use()
       program.setUniform('time', time)
       program.draw()
+
+      webgl.effects['bloom'].draw('particle', '2', '1', 0.4)
     }
 
-    webgl.effects['bloom'].draw('particle', '2', '1', 0.4)
-
-    webgl.bindFramebuffer('next')
-
     {
+      webgl.bindFramebuffer('next')
+
       const cTime = cubicOut(clamp((time - 0.2) * 1.2, 0, 1))
 
       const program = webgl.programs['next']
@@ -156,6 +263,28 @@ loadImage([image, image2]).then(([img, img2]) => {
       )
     }
 
+    targetbufferIndex = loopCount++ % 2
+    prevbufferIndex = 1 - targetbufferIndex
+
+    {
+      webgl.bindFramebuffer('velocity' + targetbufferIndex)
+
+      const program = webgl.programs['velocity']
+      program.use()
+      program.setFramebufferUniform('prevVelocityTexture', 'velocity' + prevbufferIndex)
+      program.draw()
+    }
+
+    {
+      webgl.bindFramebuffer('position' + targetbufferIndex)
+
+      const program = webgl.programs['position']
+      program.use()
+      program.setFramebufferUniform('prevPositionTexture', 'position' + prevbufferIndex)
+      program.setFramebufferUniform('velocityTexture', 'velocity' + targetbufferIndex)
+      program.draw()
+    }
+
     webgl.unbindFramebuffer()
 
     {
@@ -164,6 +293,15 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.setUniform('time', time)
       program.setFramebufferUniform('particle', '1')
       program.setFramebufferUniform('next', '2')
+      program.draw()
+    }
+
+    {
+      // webgl.unbindFramebuffer()
+
+      const program = webgl.programs['curl']
+      program.use()
+      program.setFramebufferUniform('positionTexture', 'position' + targetbufferIndex)
       program.draw()
     }
   }

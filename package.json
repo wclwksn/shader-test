@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bezier-easing": "^2.1.0",
+    "glsl-curl-noise": "^0.0.4",
     "glsl-easings": "^1.0.0",
     "glsl-fast-gaussian-blur": "^1.0.2",
     "glsl-noise": "^0.0.0",
