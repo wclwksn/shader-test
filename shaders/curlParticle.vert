@@ -5,9 +5,11 @@ uniform mat4 mvpMatrix;
 uniform vec2 resolution;
 uniform sampler2D positionTexture;
 
+#pragma glslify: curlNoise = require(glsl-curl-noise)
+
 void main() {
   vec4 position = texture2D(positionTexture, uv);
-  position.xyz *= min(resolution.x, resolution.y) * 0.5;
+  position.xyz = curlNoise(position.xyz) * min(resolution.x, resolution.y) * 0.5;
 
   gl_Position = mvpMatrix * position;
   // gl_Position = mvpMatrix * vec4(uv * 100., 0., 1.); // * debug
