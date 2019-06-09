@@ -8,12 +8,20 @@ import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
 import nextFrag from '../shaders/next.frag'
-import resetVelocityFrag from '../shaders/resetVelocity.frag'
-import resetPositionFrag from '../shaders/resetPosition.frag'
-import velocityFrag from '../shaders/velocity.frag'
-import positionFrag from '../shaders/position.frag'
-import curlParticleVert from '../shaders/curlParticle.vert'
-import curlParticleFrag from '../shaders/curlParticle.frag'
+
+import resetVelocityFrag from '../shaders/curl/resetVelocity.frag'
+import resetPositionFrag from '../shaders/curl/resetPosition.frag'
+import velocityFrag from '../shaders/curl/velocity.frag'
+import positionFrag from '../shaders/curl/position.frag'
+import curlVert from '../shaders/curl/main.vert'
+import curlFrag from '../shaders/curl/main.frag'
+
+import trailResetVelocityFrag from '../shaders/trail/resetVelocity.frag'
+import trailResetPositionFrag from '../shaders/trail/resetPosition.frag'
+import trailVelocityFrag from '../shaders/trail/velocity.frag'
+import trailPositionFrag from '../shaders/trail/position.frag'
+import trailVert from '../shaders/trail/main.vert'
+import trailFrag from '../shaders/trail/main.frag'
 
 const image = require('../images/room.jpg')
 const image2 = require('../images/star.jpeg')
@@ -24,12 +32,17 @@ loadImage([image, image2]).then(([img, img2]) => {
   const height = canvas.clientHeight
   const halfWidth = width / 2
   const halfHeight = height / 2
-  const size = 300
-  const sizeUniform = [size, size]
   const particlePosition = []
   const particleNormal = []
   const particleUv = []
+
+  const curlSize = 300
+  const curlSizeUniform = [curlSize, curlSize]
   const curlUv = []
+
+  const trailSize = 100
+  const trailSizeUniform = [trailSize, trailSize]
+  const trailUv = []
 
   for (let j = 0; j < height; j++) {
     for (let i = 0; i < width; i++) {
@@ -39,10 +52,15 @@ loadImage([image, image2]).then(([img, img2]) => {
     }
   }
 
+  for (let j = 0; j < curlSize; j++) {
+    for (let i = 0; i < curlSize; i++) {
+      curlUv.push(i / curlSize, 1 - j / curlSize)
+    }
+  }
 
-  for (let j = 0; j < size; j++) {
-    for (let i = 0; i < size; i++) {
-      curlUv.push(i / size, 1 - j / size)
+  for (let j = 0; j < trailSize; j++) {
+    for (let i = 0; i < trailSize; i++) {
+      trailUv.push(i / trailSize, 1 - j / trailSize)
     }
   }
 
@@ -129,7 +147,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       resetPosition: {
         fragmentShader: resetPositionFrag,
         uniforms: {
-          size: sizeUniform
+          size: curlSizeUniform
         },
         hasResolution: false,
         hasCamera: false,
@@ -138,7 +156,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       velocity: {
         fragmentShader: velocityFrag,
         uniforms: {
-          size: sizeUniform,
+          size: curlSizeUniform,
           prevVelocityTexture: 'framebuffer'
         },
         hasResolution: false,
@@ -148,7 +166,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       position: {
         fragmentShader: positionFrag,
         uniforms: {
-          size: sizeUniform,
+          size: curlSizeUniform,
           prevPositionTexture: 'framebuffer',
           velocityTexture: 'framebuffer'
         },
@@ -157,8 +175,8 @@ loadImage([image, image2]).then(([img, img2]) => {
         hasLight: false
       },
       curl: {
-        vertexShader: curlParticleVert,
-        fragmentShader: curlParticleFrag,
+        vertexShader: curlVert,
+        fragmentShader: curlFrag,
         attributes: {
           uv: {
             value: curlUv,
@@ -169,6 +187,59 @@ loadImage([image, image2]).then(([img, img2]) => {
           positionTexture: 'framebuffer'
         },
         mode: 'POINTS',
+        isClear: false
+      },
+      trailResetVelocity: {
+        fragmentShader: trailResetVelocityFrag,
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      trailResetPosition: {
+        fragmentShader: trailResetPositionFrag,
+        uniforms: {
+          size: trailSizeUniform
+        },
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      trailVelocity: {
+        fragmentShader: trailVelocityFrag,
+        uniforms: {
+          size: trailSizeUniform,
+          prevVelocityTexture: 'framebuffer',
+          prevPositionTexture: 'framebuffer'
+        },
+        hasResolution: false,
+        hasTime: true,
+        hasCamera: false,
+        hasLight: false
+      },
+      trailPosition: {
+        fragmentShader: trailPositionFrag,
+        uniforms: {
+          size: trailSizeUniform,
+          prevPositionTexture: 'framebuffer',
+          velocityTexture: 'framebuffer'
+        },
+        hasResolution: false,
+        hasCamera: false,
+        hasLight: false
+      },
+      trail: {
+        vertexShader: trailVert,
+        fragmentShader: trailFrag,
+        attributes: {
+          uv: {
+            value: trailUv,
+            stride: 2
+          }
+        },
+        uniforms: {
+          positionTexture: 'framebuffer'
+        },
+        mode: 'LINES',
         isClear: false
       }
     },
@@ -185,20 +256,36 @@ loadImage([image, image2]).then(([img, img2]) => {
     ],
     framebufferFloats: {
       velocity0: {
-        width: size,
-        height: size
+        width: curlSize,
+        height: curlSize
       },
       velocity1: {
-        width: size,
-        height: size
+        width: curlSize,
+        height: curlSize
       },
       position0: {
-        width: size,
-        height: size
+        width: curlSize,
+        height: curlSize
       },
       position1: {
-        width: size,
-        height: size
+        width: curlSize,
+        height: curlSize
+      },
+      trailVelocity0: {
+        width: trailSize,
+        height: trailSize
+      },
+      trailVelocity1: {
+        width: trailSize,
+        height: trailSize
+      },
+      trailPosition0: {
+        width: trailSize,
+        height: trailSize
+      },
+      trailPosition1: {
+        width: trailSize,
+        height: trailSize
       }
     },
     isAutoStart: false
@@ -222,6 +309,22 @@ loadImage([image, image2]).then(([img, img2]) => {
     webgl.bindFramebuffer('position' + targetbufferIndex)
 
     const program = webgl.programs['resetPosition']
+    program.use()
+    program.draw()
+  }
+
+  {
+    webgl.bindFramebuffer('trailVelocity' + targetbufferIndex)
+
+    const program = webgl.programs['trailResetVelocity']
+    program.use()
+    program.draw()
+  }
+
+  {
+    webgl.bindFramebuffer('trailPosition' + targetbufferIndex)
+
+    const program = webgl.programs['trailResetPosition']
     program.use()
     program.draw()
   }
@@ -285,6 +388,26 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
+    {
+      webgl.bindFramebuffer('trailVelocity' + targetbufferIndex)
+
+      const program = webgl.programs['trailVelocity']
+      program.use()
+      program.setFramebufferUniform('prevVelocityTexture', 'trailVelocity' + prevbufferIndex)
+      program.setFramebufferUniform('prevPositionTexture', 'trailPosition' + prevbufferIndex)
+      program.draw()
+    }
+
+    {
+      webgl.bindFramebuffer('trailPosition' + targetbufferIndex)
+
+      const program = webgl.programs['trailPosition']
+      program.use()
+      program.setFramebufferUniform('prevPositionTexture', 'trailPosition' + prevbufferIndex)
+      program.setFramebufferUniform('velocityTexture', 'trailVelocity' + targetbufferIndex)
+      program.draw()
+    }
+
     webgl.unbindFramebuffer()
 
     {
@@ -297,11 +420,16 @@ loadImage([image, image2]).then(([img, img2]) => {
     }
 
     {
-      // webgl.unbindFramebuffer()
-
       const program = webgl.programs['curl']
       program.use()
       program.setFramebufferUniform('positionTexture', 'position' + targetbufferIndex)
+      program.draw()
+    }
+
+    {
+      const program = webgl.programs['trail']
+      program.use()
+      program.setFramebufferUniform('positionTexture', 'trailPosition' + targetbufferIndex)
       program.draw()
     }
   }

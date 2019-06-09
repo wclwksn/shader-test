@@ -7,7 +7,7 @@ const float speed = 0.000004;
 
 void main() {
   vec2 uv = gl_FragCoord.st / size;
-  vec4 prevVelocity = texture2D(prevVelocityTexture, uv);
+  vec3 prevVelocity = texture2D(prevVelocityTexture, uv).xyz;
 
-  gl_FragColor = vec4(prevVelocity.xyz + speed, 1.);
+  gl_FragColor = vec4(prevVelocity + speed, 1.);
 }
