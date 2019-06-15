@@ -9,6 +9,8 @@ import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
 import nextFrag from '../shaders/next.frag'
 
+import textureFrag from '../shaders/template/texture.frag'
+
 import resetVelocityFrag from '../shaders/curl/resetVelocity.frag'
 import resetPositionFrag from '../shaders/curl/resetPosition.frag'
 import velocityFrag from '../shaders/curl/velocity.frag'
@@ -187,7 +189,8 @@ loadImage([image, image2]).then(([img, img2]) => {
           positionTexture: 'framebuffer'
         },
         mode: 'POINTS',
-        isClear: false
+        // isClear: false,
+        isTransparent: true
       },
       trailResetVelocity: {
         fragmentShader: trailResetVelocityFrag,
@@ -242,6 +245,14 @@ loadImage([image, image2]).then(([img, img2]) => {
         mode: 'LINES',
         isClear: false,
         isTransparent: true
+      },
+      texture: {
+        fragmentShader: textureFrag,
+        uniforms: {
+          texture: 'framebuffer'
+        },
+        isClear: false,
+        isTransparent: true
       }
     },
     effects: [
@@ -252,6 +263,7 @@ loadImage([image, image2]).then(([img, img2]) => {
     framebuffers: [
       'particle',
       'next',
+      'fly',
       '1',
       '2'
     ],
@@ -339,7 +351,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.setUniform('time', time)
       program.draw()
 
-      webgl.effects['bloom'].draw('particle', '2', '1', 0.4)
+      webgl.effects['bloom'].draw('particle', '2', '1')
     }
 
     {
@@ -409,16 +421,7 @@ loadImage([image, image2]).then(([img, img2]) => {
       program.draw()
     }
 
-    webgl.unbindFramebuffer()
-
-    {
-      const program = webgl.programs['main']
-      program.use()
-      program.setUniform('time', time)
-      program.setFramebufferUniform('particle', '1')
-      program.setFramebufferUniform('next', '2')
-      program.draw()
-    }
+    webgl.bindFramebuffer('fly')
 
     {
       const program = webgl.programs['curl']
@@ -431,6 +434,26 @@ loadImage([image, image2]).then(([img, img2]) => {
       const program = webgl.programs['trail']
       program.use()
       program.setFramebufferUniform('positionTexture', 'trailPosition' + targetbufferIndex)
+      program.draw()
+    }
+
+    webgl.effects['bloom'].draw('fly', 'particle', 'next')
+
+    webgl.unbindFramebuffer()
+
+    {
+      const program = webgl.programs['main']
+      program.use()
+      program.setUniform('time', time)
+      program.setFramebufferUniform('particle', '1')
+      program.setFramebufferUniform('next', '2')
+      program.draw()
+    }
+
+    {
+      const program = webgl.programs['texture']
+      program.use()
+      program.setFramebufferUniform('texture', 'next')
       program.draw()
     }
   }

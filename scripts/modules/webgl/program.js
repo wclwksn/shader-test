@@ -1,5 +1,4 @@
-import noneVert from '../../../shaders/template/none.vert'
-
+const noneVert = 'attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}'
 const noneAttribute = {
   position: {
     value: [-1, 1, -1, -1, 1, 1, 1, -1],

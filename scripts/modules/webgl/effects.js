@@ -1,9 +1,9 @@
 import Program from './program'
+import textureFrag from '../../../shaders/template/texture.frag'
 import blurFrag from '../../../shaders/postprocessing/blur.frag'
 import specularFrag from '../../../shaders/postprocessing/specular.frag'
 import bloomFrag from '../../../shaders/postprocessing/bloom.frag'
 import zoomblurFrag from '../../../shaders/postprocessing/zoomblur.frag'
-import godrayFrag from '../../../shaders/postprocessing/godray.frag'
 
 export class Blur extends Program {
   constructor (webgl) {
@@ -72,7 +72,7 @@ export class Bloom extends Program {
   constructor (webgl) {
     if (!webgl.effects['bloomSpecular']) {
       webgl.effects['bloomSpecular'] = new Specular(webgl, {
-        threshold: 0.5
+        threshold: 0.3
       })
     }
 
@@ -80,12 +80,22 @@ export class Bloom extends Program {
       webgl.effects['bloomBlur'] = new Blur(webgl)
     }
 
+    if (!webgl.effects['bloomBase']) {
+      webgl.effects['bloomBase'] = new Program(webgl, {
+        fragmentShader: textureFrag,
+        uniforms: {
+          texture: 'framebuffer'
+        }
+      })
+    }
+
     const option = {
       fragmentShader: bloomFrag,
       uniforms: {
-        texture: 'framebuffer',
         specular: 'framebuffer'
-      }
+      },
+      isAdditive: true,
+      isClear: false
     }
     super(webgl, option)
 
@@ -102,8 +112,15 @@ export class Bloom extends Program {
     )
 
     this.webgl.bindFramebuffer(isOnscreen ? null : outFramebufferKey)
+
+    {
+      const program = this.webgl.effects['bloomBase']
+      program.use()
+      program.setFramebufferUniform('texture', readFramebufferKey)
+      program.draw()
+    }
+
     this.use()
-    this.setFramebufferUniform('texture', readFramebufferKey)
     this.setFramebufferUniform('specular', cacheFramebufferKey)
     super.draw()
   }
@@ -150,7 +167,7 @@ export class Godray extends Program {
 
     if (!webgl.effects['godrayBase']) {
       webgl.effects['godrayBase'] = new Program(webgl, {
-        fragmentShader: godrayFrag,
+        fragmentShader: textureFrag,
         uniforms: {
           texture: 'framebuffer'
         }
@@ -158,7 +175,7 @@ export class Godray extends Program {
     }
 
     const option = {
-      fragmentShader: godrayFrag,
+      fragmentShader: textureFrag,
       uniforms: {
         texture: 'framebuffer'
       },
