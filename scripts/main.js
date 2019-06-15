@@ -240,7 +240,8 @@ loadImage([image, image2]).then(([img, img2]) => {
           positionTexture: 'framebuffer'
         },
         mode: 'LINES',
-        isClear: false
+        isClear: false,
+        isTransparent: true
       }
     },
     effects: [
