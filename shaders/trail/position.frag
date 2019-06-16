@@ -15,7 +15,7 @@ void main() {
   vec3 prevPosition = texture2D(prevPositionTexture, uv).xyz;
   vec3 velocity =
     gl_FragCoord.x < 1.
-    ? texture2D(velocityTexture, uv).xyz * 0.002
+    ? texture2D(velocityTexture, uv).xyz * 0.01
     : vec3(0.);
 
   gl_FragColor = vec4(prevPosition + velocity, 1.);

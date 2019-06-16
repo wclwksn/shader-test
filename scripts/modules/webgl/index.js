@@ -50,7 +50,7 @@ export default class Webgl {
 
     this.tick = tick
     this.onResize = onResize
-    this.isClear = isClear || !!clearedColor
+    this.isClear = isClear
     this.clearedColor = this.isClear ? clearedColor || [0, 0, 0, 0] : null
 
     Object.keys(programs).forEach(key => {

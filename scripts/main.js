@@ -42,8 +42,9 @@ loadImage([image, image2]).then(([img, img2]) => {
   const curlSizeUniform = [curlSize, curlSize]
   const curlUv = []
 
-  const trailSize = 100
-  const trailSizeUniform = [trailSize, trailSize]
+  const trailLength = 20
+  const trailNum = 20
+  const trailSizeUniform = [trailLength, trailNum]
   const trailUv = []
 
   for (let j = 0; j < height; j++) {
@@ -60,9 +61,9 @@ loadImage([image, image2]).then(([img, img2]) => {
     }
   }
 
-  for (let j = 0; j < trailSize; j++) {
-    for (let i = 0; i < trailSize; i++) {
-      trailUv.push(i / trailSize, 1 - j / trailSize)
+  for (let j = 0; j < trailNum; j++) {
+    for (let i = 0; i < trailLength; i++) {
+      trailUv.push(i / trailLength, 1 - j / trailNum)
     }
   }
 
@@ -188,7 +189,7 @@ loadImage([image, image2]).then(([img, img2]) => {
         uniforms: {
           positionTexture: 'framebuffer'
         },
-        mode: 'POINTS',
+        mode: 'LINE_STRIP',
         // isClear: false,
         isTransparent: true
       },
@@ -285,20 +286,20 @@ loadImage([image, image2]).then(([img, img2]) => {
         height: curlSize
       },
       trailVelocity0: {
-        width: trailSize,
-        height: trailSize
+        width: trailLength,
+        height: trailNum
       },
       trailVelocity1: {
-        width: trailSize,
-        height: trailSize
+        width: trailLength,
+        height: trailNum
       },
       trailPosition0: {
-        width: trailSize,
-        height: trailSize
+        width: trailLength,
+        height: trailNum
       },
       trailPosition1: {
-        width: trailSize,
-        height: trailSize
+        width: trailLength,
+        height: trailNum
       }
     },
     isAutoStart: false

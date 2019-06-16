@@ -42,7 +42,7 @@ export default class Program {
     this.hasCamera = hasCamera
     this.hasLight = hasLight
     this.hasTime = hasTime
-    this.isClear = isClear || !!clearedColor
+    this.isClear = isClear
     this.clearedColor = clearedColor || [0, 0, 0, 0]
 
     this.createProgram(vertexShader, fragmentShader)
