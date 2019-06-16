@@ -42,7 +42,7 @@ loadImage([image, image2]).then(([img, img2]) => {
   const curlSizeUniform = [curlSize, curlSize]
   const curlUv = []
 
-  const trailLength = 20
+  const trailLength = 40
   const trailNum = 20
   const trailSizeUniform = [trailLength, trailNum]
   const trailUv = []
