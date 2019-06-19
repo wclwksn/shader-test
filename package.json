@@ -1,6 +1,7 @@
 {
   "scripts": {
     "dev": "parcel index.html --open",
+    "dev:lines": "parcel lines.html --open",
     "build": "parcel build index.html"
   },
   "devDependencies": {
