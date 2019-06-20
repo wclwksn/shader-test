@@ -127,7 +127,7 @@ targetbufferIndex = loopCount++ % 2
   webgl.programs['resetPosition'].draw()
 }
 
-const draw = time => {
+const draw = () => {
   targetbufferIndex = loopCount++ % 2
   prevbufferIndex = 1 - targetbufferIndex
 
@@ -166,15 +166,7 @@ const draw = time => {
       texture: '1'
     })
   }
-}
 
-animate(draw, {
-  duration: 7000,
-  // delay: 0,
-  // easing: 'easeInCubic',
-  // cubicBezier: [.3, .0, .4, 1],
-  isRoop: true,
-  onBefore () {
-    draw(0)
-  }
-})
+  requestAnimationFrame(draw)
+}
+requestAnimationFrame(draw)
