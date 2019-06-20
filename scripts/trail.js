@@ -10,8 +10,6 @@ import positionFrag from '../shaders/trail/position.frag'
 import trailVert from '../shaders/trail/main.vert'
 import trailFrag from '../shaders/trail/main.frag'
 
-const canvas = document.getElementById('canvas')
-
 const trailLength = 40
 const trailNum = 20
 const trailSizeUniform = [trailLength, trailNum]
@@ -24,7 +22,6 @@ for (let j = 0; j < trailNum; j++) {
 }
 
 const webgl = new Webgl({
-  canvas,
   cameraPosition: [0, 0, 50],
   ambientColor: [0.2, 0.2, 0.2],
   programs: {

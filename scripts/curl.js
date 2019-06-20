@@ -10,8 +10,6 @@ import positionFrag from '../shaders/curl/position.frag'
 import curlVert from '../shaders/curl/main.vert'
 import curlFrag from '../shaders/curl/main.frag'
 
-const canvas = document.getElementById('canvas')
-
 const curlSize = 300
 const curlSizeUniform = [curlSize, curlSize]
 const curlUv = []
@@ -23,7 +21,6 @@ for (let j = 0; j < curlSize; j++) {
 }
 
 const webgl = new Webgl({
-  canvas,
   cameraPosition: [0, 0, 50],
   ambientColor: [0.2, 0.2, 0.2],
   programs: {
