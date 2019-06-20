@@ -75,7 +75,7 @@ const webgl = new Webgl({
       uniforms: {
         texture: 'framebuffer'
       },
-      isClear: false,
+      clearedColor: [0, 0, 0, 1],
       isTransparent: true
     }
   },
