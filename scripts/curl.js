@@ -29,20 +29,14 @@ const webgl = new Webgl({
   programs: {
     resetVelocity: {
       fragmentShader: resetVelocityFrag,
-      hasResolution: false,
-      hasCamera: false,
-      hasLight: false,
-      isClear: false
+      isFloats: true
     },
     resetPosition: {
       fragmentShader: resetPositionFrag,
       uniforms: {
         size: curlSizeUniform
       },
-      hasResolution: false,
-      hasCamera: false,
-      hasLight: false,
-      isClear: false
+      isFloats: true
     },
     velocity: {
       fragmentShader: velocityFrag,
@@ -50,10 +44,7 @@ const webgl = new Webgl({
         size: curlSizeUniform,
         prevVelocityTexture: 'framebuffer'
       },
-      hasResolution: false,
-      hasCamera: false,
-      hasLight: false,
-      isClear: false
+      isFloats: true
     },
     position: {
       fragmentShader: positionFrag,
@@ -62,10 +53,7 @@ const webgl = new Webgl({
         prevPositionTexture: 'framebuffer',
         velocityTexture: 'framebuffer'
       },
-      hasResolution: false,
-      hasCamera: false,
-      hasLight: false,
-      isClear: false
+      isFloats: true
     },
     curl: {
       vertexShader: curlVert,

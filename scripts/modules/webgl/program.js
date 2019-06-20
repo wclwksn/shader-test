@@ -21,17 +21,23 @@ export default class Program {
       fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
       attributes,
       uniforms,
-      hasResolution = true,
       hasTime = false,
       mode = 'TRIANGLE_STRIP',
       drawType = 'STATIC_DRAW',
       isTransparent = false,
       isAdditive = false,
-      hasCamera = true,
-      hasLight = true,
-      isClear = true,
+      isFloats = false,
       clearedColor
     } = option
+
+    const defaultValue = isFloats ? false : true
+    const {
+      hasResolution = defaultValue,
+      hasCamera = defaultValue,
+      hasLight = defaultValue,
+      isClear = defaultValue
+    } = option
+
     const isWhole = !option.vertexShader
 
     this.mode = gl[mode]
