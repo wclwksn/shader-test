@@ -123,10 +123,9 @@ loadImage([image, image2]).then(([img, img2]) => {
     {
       webgl.bindFramebuffer('particle')
 
-      const program = webgl.programs['particle']
-      program.use()
-      program.uniforms.time = time
-      program.draw()
+      webgl.programs['particle'].draw({
+        time
+      })
 
       webgl.effects['bloom'].draw('particle', '2', '1')
     }
@@ -136,10 +135,9 @@ loadImage([image, image2]).then(([img, img2]) => {
 
       const cTime = cubicOut(clamp((time - 0.2) * 1.2, 0, 1))
 
-      const program = webgl.programs['next']
-      program.use()
-      program.uniforms.time = cTime
-      program.draw()
+      webgl.programs['next'].draw({
+        time: cTime
+      })
 
       webgl.effects['blur'].draw('next', '2', mix(2, 0, cTime))
 
@@ -156,15 +154,14 @@ loadImage([image, image2]).then(([img, img2]) => {
       )
     }
 
-    webgl.unbindFramebuffer()
-
     {
-      const program = webgl.programs['main']
-      program.use()
-      program.uniforms.time = time
-      program.uniforms.particle = '1'
-      program.uniforms.next = '2'
-      program.draw()
+      webgl.unbindFramebuffer()
+
+      webgl.programs['main'].draw({
+        time,
+        particle: '1',
+        next: '2'
+      })
     }
   }
 

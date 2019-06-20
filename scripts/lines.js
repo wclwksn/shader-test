@@ -213,34 +213,22 @@ targetbufferIndex = loopCount++ % 2
 
 {
   webgl.bindFramebuffer('velocity' + targetbufferIndex)
-
-  const program = webgl.programs['resetVelocity']
-  program.use()
-  program.draw()
+  webgl.programs['resetVelocity'].draw()
 }
 
 {
   webgl.bindFramebuffer('position' + targetbufferIndex)
-
-  const program = webgl.programs['resetPosition']
-  program.use()
-  program.draw()
+  webgl.programs['resetPosition'].draw()
 }
 
 {
   webgl.bindFramebuffer('trailVelocity' + targetbufferIndex)
-
-  const program = webgl.programs['trailResetVelocity']
-  program.use()
-  program.draw()
+  webgl.programs['trailResetVelocity'].draw()
 }
 
 {
   webgl.bindFramebuffer('trailPosition' + targetbufferIndex)
-
-  const program = webgl.programs['trailResetPosition']
-  program.use()
-  program.draw()
+  webgl.programs['trailResetPosition'].draw()
 }
 
 const draw = time => {
@@ -250,67 +238,58 @@ const draw = time => {
   {
     webgl.bindFramebuffer('velocity' + targetbufferIndex)
 
-    const program = webgl.programs['velocity']
-    program.use()
-    program.uniforms.prevVelocityTexture = 'velocity' + prevbufferIndex
-    program.draw()
+    webgl.programs['velocity'].draw({
+      prevVelocityTexture: 'velocity' + prevbufferIndex
+    })
   }
 
   {
     webgl.bindFramebuffer('position' + targetbufferIndex)
 
-    const program = webgl.programs['position']
-    program.use()
-    program.uniforms.prevPositionTexture = 'position' + prevbufferIndex
-    program.uniforms.velocityTexture = 'velocity' + targetbufferIndex
-    program.draw()
+    webgl.programs['position'].draw({
+      prevPositionTexture: 'position' + prevbufferIndex,
+      velocityTexture: 'velocity' + targetbufferIndex
+    })
   }
 
   {
     webgl.bindFramebuffer('trailVelocity' + targetbufferIndex)
 
-    const program = webgl.programs['trailVelocity']
-    program.use()
-    program.uniforms.prevVelocityTexture = 'trailVelocity' + prevbufferIndex
-    program.uniforms.prevPositionTexture = 'trailPosition' + prevbufferIndex
-    program.draw()
+    webgl.programs['trailVelocity'].draw({
+      prevVelocityTexture: 'trailVelocity' + prevbufferIndex,
+      prevPositionTexture: 'trailPosition' + prevbufferIndex
+    })
   }
 
   {
     webgl.bindFramebuffer('trailPosition' + targetbufferIndex)
 
-    const program = webgl.programs['trailPosition']
-    program.use()
-    program.uniforms.prevPositionTexture = 'trailPosition' + prevbufferIndex
-    program.uniforms.velocityTexture = 'trailVelocity' + targetbufferIndex
-    program.draw()
-  }
-
-  webgl.bindFramebuffer('fly')
-
-  {
-    const program = webgl.programs['curl']
-    program.use()
-    program.uniforms.positionTexture = 'position' + targetbufferIndex
-    program.draw()
+    webgl.programs['trailPosition'].draw({
+      prevPositionTexture: 'trailPosition' + prevbufferIndex,
+      velocityTexture: 'trailVelocity' + targetbufferIndex
+    })
   }
 
   {
-    const program = webgl.programs['trail']
-    program.use()
-    program.uniforms.positionTexture = 'trailPosition' + targetbufferIndex
-    program.draw()
+    webgl.bindFramebuffer('fly')
+
+    webgl.programs['curl'].draw({
+      positionTexture: 'position' + targetbufferIndex
+    })
+
+    webgl.programs['trail'].draw({
+      positionTexture: 'trailPosition' + targetbufferIndex
+    })
+
+    webgl.effects['bloom'].draw('fly', '2', '1')
   }
 
-  webgl.effects['bloom'].draw('fly', '2', '1')
-
-  webgl.unbindFramebuffer()
-
   {
-    const program = webgl.programs['texture']
-    program.use()
-    program.uniforms.texture = '1'
-    program.draw()
+    webgl.unbindFramebuffer()
+
+    webgl.programs['texture'].draw({
+      texture: '1'
+    })
   }
 }
 

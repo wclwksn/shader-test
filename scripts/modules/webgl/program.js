@@ -34,7 +34,7 @@ export default class Program {
     } = option
     const isWhole = !option.vertexShader
 
-    this.mode = mode
+    this.mode = gl[mode]
     this.drawType = drawType
     this.isTransparent = isTransparent
     this.isAdditive = isAdditive
@@ -282,9 +282,10 @@ export default class Program {
     this.webgl.gl.useProgram(this.program)
   }
 
-  draw () {
+  draw (uniforms) {
     const { gl } = this.webgl
-    const { attributes } = this
+
+    this.use()
 
     if (this.isClear) {
       gl.clearColor(...this.clearedColor)
@@ -301,10 +302,16 @@ export default class Program {
       gl.disable(gl.BLEND)
     }
 
-    Object.keys(attributes).forEach(key => {
+    if (uniforms) {
+      Object.keys(uniforms).forEach(key => {
+        this.uniforms[key] = uniforms[key]
+      })
+    }
+
+    Object.keys(this.attributes).forEach(key => {
       this.setAttribute(key)
     })
 
-    gl.drawArrays(gl[this.mode], 0, this.count)
+    gl.drawArrays(this.mode, 0, this.count)
   }
 }
