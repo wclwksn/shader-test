@@ -196,7 +196,7 @@ export default class Webgl {
       const program = this.programs[key]
       if (program.hasResolution) {
         program.use()
-        program.setUniform('resolution', [width, height])
+        program.uniforms.resolution = [width, height]
       }
     })
 
@@ -204,7 +204,7 @@ export default class Webgl {
       const program = this.effects[key]
       if (program.hasResolution) {
         program.use()
-        program.setUniform('resolution', [width, height])
+        program.uniforms.resolution = [width, height]
       }
     })
 
@@ -261,8 +261,8 @@ export default class Webgl {
       const program = this.programs[key]
       if (program.hasCamera) {
         program.use()
-        program.setUniform('mvpMatrix', mvpMatrix)
-        program.setUniform('invMatrix', invMatrix)
+        program.uniforms.mvpMatrix = mvpMatrix
+        program.uniforms.invMatrix = invMatrix
       }
     })
   }
@@ -278,9 +278,9 @@ export default class Webgl {
       const program = this.programs[key]
       if (program.hasLight) {
         program.use()
-        program.setUniform('lightDirection', lightDirection)
-        program.setUniform('eyeDirection', eyeDirection)
-        program.setUniform('ambientColor', ambientColor)
+        program.uniforms.lightDirection = lightDirection
+        program.uniforms.eyeDirection = eyeDirection
+        program.uniforms.ambientColor = ambientColor
       }
     })
   }

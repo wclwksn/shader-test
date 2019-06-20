@@ -252,7 +252,7 @@ const draw = time => {
 
     const program = webgl.programs['velocity']
     program.use()
-    program.setFramebufferUniform('prevVelocityTexture', 'velocity' + prevbufferIndex)
+    program.uniforms.prevVelocityTexture = 'velocity' + prevbufferIndex
     program.draw()
   }
 
@@ -261,8 +261,8 @@ const draw = time => {
 
     const program = webgl.programs['position']
     program.use()
-    program.setFramebufferUniform('prevPositionTexture', 'position' + prevbufferIndex)
-    program.setFramebufferUniform('velocityTexture', 'velocity' + targetbufferIndex)
+    program.uniforms.prevPositionTexture = 'position' + prevbufferIndex
+    program.uniforms.velocityTexture = 'velocity' + targetbufferIndex
     program.draw()
   }
 
@@ -271,8 +271,8 @@ const draw = time => {
 
     const program = webgl.programs['trailVelocity']
     program.use()
-    program.setFramebufferUniform('prevVelocityTexture', 'trailVelocity' + prevbufferIndex)
-    program.setFramebufferUniform('prevPositionTexture', 'trailPosition' + prevbufferIndex)
+    program.uniforms.prevVelocityTexture = 'trailVelocity' + prevbufferIndex
+    program.uniforms.prevPositionTexture = 'trailPosition' + prevbufferIndex
     program.draw()
   }
 
@@ -281,8 +281,8 @@ const draw = time => {
 
     const program = webgl.programs['trailPosition']
     program.use()
-    program.setFramebufferUniform('prevPositionTexture', 'trailPosition' + prevbufferIndex)
-    program.setFramebufferUniform('velocityTexture', 'trailVelocity' + targetbufferIndex)
+    program.uniforms.prevPositionTexture = 'trailPosition' + prevbufferIndex
+    program.uniforms.velocityTexture = 'trailVelocity' + targetbufferIndex
     program.draw()
   }
 
@@ -291,14 +291,14 @@ const draw = time => {
   {
     const program = webgl.programs['curl']
     program.use()
-    program.setFramebufferUniform('positionTexture', 'position' + targetbufferIndex)
+    program.uniforms.positionTexture = 'position' + targetbufferIndex
     program.draw()
   }
 
   {
     const program = webgl.programs['trail']
     program.use()
-    program.setFramebufferUniform('positionTexture', 'trailPosition' + targetbufferIndex)
+    program.uniforms.positionTexture = 'trailPosition' + targetbufferIndex
     program.draw()
   }
 
@@ -309,7 +309,7 @@ const draw = time => {
   {
     const program = webgl.programs['texture']
     program.use()
-    program.setFramebufferUniform('texture', '1')
+    program.uniforms.texture = '1'
     program.draw()
   }
 }

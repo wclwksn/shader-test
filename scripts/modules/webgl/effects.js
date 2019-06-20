@@ -29,9 +29,9 @@ export class Blur extends Program {
     const iterations = 8
     for (let i = 0; i < iterations; i++) {
       this.webgl.bindFramebuffer(isOnscreen && i >= iterations - 1 ? null : cacheFramebufferKey)
-      this.setFramebufferUniform('texture', readFramebufferKey)
-      this.setUniform('radius', (iterations - 1 - i) * (typeof radius !== 'undefined' ? radius : this.radius))
-      this.setUniform('isHorizontal', i % 2 === 0)
+      this.uniforms.texture = readFramebufferKey
+      this.uniforms.radius = (iterations - 1 - i) * (typeof radius !== 'undefined' ? radius : this.radius)
+      this.uniforms.isHorizontal = i % 2 === 0
       super.draw()
 
       const t = cacheFramebufferKey
@@ -62,8 +62,8 @@ class Specular extends Program {
   draw (readFramebufferKey, outFramebufferKey, threshold) {
     this.webgl.bindFramebuffer(outFramebufferKey)
     this.use()
-    this.setFramebufferUniform('texture', readFramebufferKey)
-    if (typeof threshold !== 'undefined') this.setUniform('threshold', threshold)
+    this.uniforms.texture = readFramebufferKey
+    if (typeof threshold !== 'undefined') this.uniforms.threshold = threshold
     super.draw()
   }
 }
@@ -116,12 +116,12 @@ export class Bloom extends Program {
     {
       const program = this.webgl.effects['bloomBase']
       program.use()
-      program.setFramebufferUniform('texture', readFramebufferKey)
+      program.uniforms.texture = readFramebufferKey
       program.draw()
     }
 
     this.use()
-    this.setFramebufferUniform('specular', cacheFramebufferKey)
+    this.uniforms.specular = cacheFramebufferKey
     super.draw()
   }
 }
@@ -142,9 +142,9 @@ export class Zoomblur extends Program {
   draw (readFramebufferKey, outFramebufferKey, strength, center, isOnscreen) {
     this.webgl.bindFramebuffer(isOnscreen ? null : outFramebufferKey)
     this.use()
-    this.setFramebufferUniform('texture', readFramebufferKey)
-    if (typeof strength !== 'undefined') this.setUniform('strength', strength)
-    if (typeof center !== 'undefined') this.setUniform('center', center)
+    this.uniforms.texture = readFramebufferKey
+    if (typeof strength !== 'undefined') this.uniforms.strength = strength
+    if (typeof center !== 'undefined') this.uniforms.center = center
     super.draw()
   }
 }
@@ -203,12 +203,12 @@ export class Godray extends Program {
     {
       const program = this.webgl.effects['godrayBase']
       program.use()
-      program.setFramebufferUniform('texture', readFramebufferKey)
+      program.uniforms.texture = readFramebufferKey
       program.draw()
     }
 
     this.use()
-    this.setFramebufferUniform('texture', cacheFramebufferKey)
+    this.uniforms.texture = cacheFramebufferKey
     super.draw()
   }
 }

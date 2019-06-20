@@ -125,7 +125,7 @@ loadImage([image, image2]).then(([img, img2]) => {
 
       const program = webgl.programs['particle']
       program.use()
-      program.setUniform('time', time)
+      program.uniforms.time = time
       program.draw()
 
       webgl.effects['bloom'].draw('particle', '2', '1')
@@ -138,7 +138,7 @@ loadImage([image, image2]).then(([img, img2]) => {
 
       const program = webgl.programs['next']
       program.use()
-      program.setUniform('time', cTime)
+      program.uniforms.time = cTime
       program.draw()
 
       webgl.effects['blur'].draw('next', '2', mix(2, 0, cTime))
@@ -161,9 +161,9 @@ loadImage([image, image2]).then(([img, img2]) => {
     {
       const program = webgl.programs['main']
       program.use()
-      program.setUniform('time', time)
-      program.setFramebufferUniform('particle', '1')
-      program.setFramebufferUniform('next', '2')
+      program.uniforms.time = time
+      program.uniforms.particle = '1'
+      program.uniforms.next = '2'
       program.draw()
     }
   }

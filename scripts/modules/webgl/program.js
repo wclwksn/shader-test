@@ -160,16 +160,19 @@ export default class Program {
   }
 
   addUniform (key, value) {
+    let originalType
     let uniformType
     let uniformValue = value
 
     const getTypeFromString = (type, value) => {
       switch (type) {
         case 'image':
+          originalType = 'image'
           uniformType = '1i'
           uniformValue = this.createTexture(key, value)
           break
         case 'framebuffer':
+          originalType = 'framebuffer'
           uniformType = '1i'
           uniformValue = value
           break
@@ -195,6 +198,7 @@ export default class Program {
           case 'Array':
             switch (value.length) {
               case 16:
+                originalType = 'matrix'
                 uniformType = 'Matrix4fv'
                 break
               default:
@@ -217,31 +221,35 @@ export default class Program {
       return
     }
 
-    this.uniforms[key] = {
-      location: this.webgl.gl.getUniformLocation(this.program, key),
-      type: `uniform${uniformType}`
+    const location = this.webgl.gl.getUniformLocation(this.program, key)
+    const type = `uniform${uniformType}`
+
+    let set
+    switch (originalType) {
+      case 'image':
+        set = textureKey => {
+          this.webgl.gl[type](location, this.textureIndexes[textureKey])
+        }
+        break
+      case 'framebuffer':
+        set = framebufferKey => {
+          this.webgl.gl[type](location, this.webgl.framebuffers[framebufferKey].textureIndex)
+        }
+        break
+      case 'matrix':
+        set = newValue => {
+          this.webgl.gl[type](location, false, newValue)
+        }
+        break
+      default:
+        set = newValue => {
+          this.webgl.gl[type](location, newValue)
+        }
     }
 
-    if (typeof uniformValue !== 'undefined') this.setUniform(key, uniformValue)
-  }
+    Object.defineProperty(this.uniforms, key, { set })
 
-  setUniform (key, value) {
-    const uniform = this.uniforms[key]
-    if (!uniform) return
-    const { location, type } = uniform
-
-    const args = /^uniformMatrix/.test(type)
-      ? [location, false, value]
-      : [location, value]
-    this.webgl.gl[type](...args)
-  }
-
-  setTextureUniform (key, textureKey) {
-    this.setUniform(key, this.textureIndexes[textureKey])
-  }
-
-  setFramebufferUniform (key, framebufferKey) {
-    this.setUniform(key, this.webgl.framebuffers[framebufferKey].textureIndex)
+    if (typeof uniformValue !== 'undefined') this.uniforms[key] = uniformValue
   }
 
   createTexture (key, el) {
