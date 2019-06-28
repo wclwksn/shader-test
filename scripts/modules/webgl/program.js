@@ -20,6 +20,7 @@ export default class Program {
       fragmentShaderSelector,
       fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
       attributes,
+      instancedAttributes,
       uniforms,
       hasTime = false,
       mode = 'TRIANGLE_STRIP',
@@ -49,14 +50,27 @@ export default class Program {
     this.hasLight = hasLight
     this.hasTime = hasTime
     this.isClear = isClear
+    this.isInstanced = instancedAttributes
     this.clearedColor = clearedColor || [0, 0, 0, 0]
 
     this.createProgram(vertexShader, fragmentShader)
 
     this.use()
 
-    if (isWhole) this.createWholeAttribute()
-    else if (attributes) this.createAttribute(attributes)
+    if (isWhole) {
+      this.createWholeAttribute()
+    } else if (attributes) {
+      this.createAttribute(attributes)
+
+      if (this.isInstanced) {
+        this.instancedArraysExt = gl.getExtension('ANGLE_instanced_arrays')
+        if (this.instancedArraysExt == null) {
+          alert('ANGLE_instanced_arrays not supported')
+          return
+        }
+        this.createAttribute(instancedAttributes, true)
+      }
+    }
 
     if (uniforms) this.createUniform(uniforms)
   }
@@ -97,29 +111,47 @@ export default class Program {
     return shader
   }
 
-  createAttribute (data) {
+  createAttribute (data, isInstanced) {
     Object.keys(data).forEach(key => {
       const { value, stride } = data[key]
 
-      this.addAttribute(key, value, stride)
+      this.addAttribute(key, value, stride, isInstanced)
     })
   }
 
-  addAttribute (key, value, stride) {
+  addAttribute (key, value, stride, isInstanced) {
     const { gl } = this.webgl
     const location = gl.getAttribLocation(this.program, key)
     const data = new Float32Array(value)
     const attribute = this.attributes[key] = {
       location,
       stride,
-      data
+      data,
+      isInstanced
     }
-    this.count = this.count || value.length / stride
+
+    if (isInstanced) {
+      this.instanceCount = this.instanceCount || value.length / stride
+    } else {
+      this.count = this.count || value.length / stride
+    }
 
     const vbo = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     gl.bufferData(gl.ARRAY_BUFFER, data, gl[this.drawType])
     attribute.vbo = vbo
+
+    this.setAttribute(key)
+  }
+
+  setAttribute (key) {
+    const { gl } = this.webgl
+    const { location, stride, vbo, isInstanced } = this.attributes[key]
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.enableVertexAttribArray(location)
+    gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
+    if (isInstanced) this.instancedArraysExt.vertexAttribDivisorANGLE(location, 1)
   }
 
   updateAttribute (key, index, value) {
@@ -129,16 +161,6 @@ export default class Program {
     data[index] = value
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, data)
-  }
-
-  setAttribute (key) {
-    const { gl } = this.webgl
-    const attribute = this.attributes[key]
-    const { location, stride, vbo } = attribute
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.enableVertexAttribArray(location)
-    gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
   }
 
   createWholeAttribute () {
@@ -318,6 +340,7 @@ export default class Program {
       this.setAttribute(key)
     })
 
-    gl.drawArrays(this.mode, 0, this.count)
+    if (this.isInstanced) this.instancedArraysExt.drawArraysInstancedANGLE(this.mode, 0, this.count, this.instanceCount)
+    else gl.drawArrays(this.mode, 0, this.count)
   }
 }

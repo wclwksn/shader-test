@@ -14,6 +14,8 @@ const image2 = require('../images/star.jpeg')
 
 loadImage([image, image2]).then(([img, img2]) => {
   const canvas = document.getElementById('canvas')
+  const pointSize = 1
+  const pointHalfSize = pointSize / 2
   const width = canvas.clientWidth
   const height = canvas.clientHeight
   const halfWidth = width / 2
@@ -40,14 +42,24 @@ loadImage([image, image2]).then(([img, img2]) => {
         fragmentShader: particleFrag,
         attributes: {
           position: {
-            value: particlePosition,
-            stride: 3
-          },
-          normal: {
-            value: particleNormal,
+            value: [-pointHalfSize, pointHalfSize, 0, -pointHalfSize, -pointHalfSize, 0, pointHalfSize, pointHalfSize, 0, pointHalfSize, -pointHalfSize, 0],
             stride: 3
           },
           uv: {
+            value: [0, 1, 0, 0, 1, 1, 1, 0],
+            stride: 2
+          },
+        },
+        instancedAttributes: {
+          instancedPosition: {
+            value: particlePosition,
+            stride: 3
+          },
+          instancedNormal: {
+            value: particleNormal,
+            stride: 3
+          },
+          instancedUv: {
             value: particleUv,
             stride: 2
           }
@@ -57,8 +69,6 @@ loadImage([image, image2]).then(([img, img2]) => {
           imageResolution: [img.width, img.height]
         },
         hasTime: true,
-        mode: 'POINTS',
-        drawType: 'DYNAMIC_DRAW',
         isTransparent: true
       },
       next: {
