@@ -22,7 +22,6 @@ export default class Program {
       attributes,
       instancedAttributes,
       uniforms,
-      hasTime = false,
       mode = 'TRIANGLE_STRIP',
       drawType = 'STATIC_DRAW',
       isTransparent = false,
@@ -48,7 +47,6 @@ export default class Program {
     this.hasResolution = hasResolution
     this.hasCamera = hasCamera
     this.hasLight = hasLight
-    this.hasTime = hasTime
     this.isClear = isClear
     this.isInstanced = instancedAttributes
     this.clearedColor = clearedColor || [0, 0, 0, 0]
@@ -171,7 +169,6 @@ export default class Program {
     const mergedData = Object.assign({}, data)
 
     if (this.hasResolution && !mergedData.resolution) mergedData.resolution = [1, 1]
-    if (this.hasTime && !mergedData.time) mergedData.time = 0
     if (this.hasCamera) {
       mergedData.mvpMatrix = new Float32Array(16)
       mergedData.invMatrix = new Float32Array(16)

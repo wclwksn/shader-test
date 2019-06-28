@@ -53,10 +53,10 @@ loadImage([image, image2]).then(([img, img2]) => {
           }
         },
         uniforms: {
+          time: 0,
           image: img,
           imageResolution: [img.width, img.height]
         },
-        hasTime: true,
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
         isTransparent: true
@@ -76,10 +76,10 @@ loadImage([image, image2]).then(([img, img2]) => {
           }
         },
         uniforms: {
+          time: 0,
           image: img2,
           imageResolution: [img2.width, img2.height]
         },
-        hasTime: true,
         isTransparent: true
       },
       main: {
@@ -97,12 +97,12 @@ loadImage([image, image2]).then(([img, img2]) => {
           }
         },
         uniforms: {
+          time: 0,
           image: img,
           imageResolution: [img.width, img.height],
           particle: 'framebuffer',
           next: 'framebuffer'
-        },
-        hasTime: true
+        }
       }
     },
     effects: [
