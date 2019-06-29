@@ -10,6 +10,7 @@ void main() {
 
 	vec2 p = gl_PointCoord * 2. - 1.;
   color.a *= min(0.2 / length(p), 1.);
+  // color.a = 0.; // * debug
   if (color.a == 0.) discard;
 
   gl_FragColor = color;

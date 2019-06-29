@@ -2,6 +2,7 @@ precision highp float;
 
 uniform vec2 resolution;
 uniform sampler2D image;
+uniform sampler2D mask;
 uniform sampler2D particle;
 uniform sampler2D next;
 uniform vec2 imageResolution;
@@ -19,7 +20,7 @@ void main() {
 
   vec2 nPosition = uv * 2. - 1.;
 
-  float existence = getExistence(uv, time);
+  float existence = getExistence(uv, time, mask);
   existence = smoothstep(0.95, 1., existence);
   float alpha = 1. - existence;
   // alpha = 1.; // * debug

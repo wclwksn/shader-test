@@ -9,10 +9,15 @@ import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
 import nextFrag from '../shaders/next.frag'
 
-const image = require('../images/room.jpg')
-const image2 = require('../images/star.jpeg')
-
-loadImage([image, image2]).then(([img, img2]) => {
+loadImage([
+  require('../images/room.jpg'),
+  require('../images/star.jpeg'),
+  require('../images/watercolor.jpg'),
+]).then(([
+  img1,
+  img2,
+  maskImg,
+]) => {
   const canvas = document.getElementById('canvas')
   const width = canvas.clientWidth
   const height = canvas.clientHeight
@@ -54,8 +59,9 @@ loadImage([image, image2]).then(([img, img2]) => {
         },
         uniforms: {
           time: 0,
-          image: img,
-          imageResolution: [img.width, img.height]
+          image: img1,
+          imageResolution: [img1.width, img1.height],
+          mask: maskImg,
         },
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
@@ -98,8 +104,9 @@ loadImage([image, image2]).then(([img, img2]) => {
         },
         uniforms: {
           time: 0,
-          image: img,
-          imageResolution: [img.width, img.height],
+          image: img1,
+          imageResolution: [img1.width, img1.height],
+          mask: maskImg,
           particle: 'framebuffer',
           next: 'framebuffer'
         }
@@ -127,7 +134,7 @@ loadImage([image, image2]).then(([img, img2]) => {
         time
       })
 
-      webgl.effects['bloom'].draw('particle', '2', '1')
+      webgl.effects['bloom'].draw('particle', '2', '1', 0.2)
     }
 
     {
@@ -166,13 +173,15 @@ loadImage([image, image2]).then(([img, img2]) => {
   }
 
   animate(draw, {
-    duration: 7000,
-    // delay: 0,
+    duration: 4000,
+    delay: 2000,
     // easing: 'easeInCubic',
     // cubicBezier: [.3, .0, .4, 1],
     isRoop: true,
     onBefore () {
-      draw(0)
+      setTimeout(() => {
+        draw(0)
+      }, 1000)
     }
   })
 })
