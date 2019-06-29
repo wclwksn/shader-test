@@ -27,6 +27,8 @@ export default class Program {
       isTransparent = false,
       isAdditive = false,
       isFloats = false,
+      isCulling = true,
+      isDepth = false,
       clearedColor
     } = option
 
@@ -48,6 +50,8 @@ export default class Program {
     this.hasCamera = hasCamera
     this.hasLight = hasLight
     this.isClear = isClear
+    this.isCulling = isCulling
+    this.isDepth = isDepth
     this.isInstanced = instancedAttributes
     this.clearedColor = clearedColor || [0, 0, 0, 0]
 
@@ -326,6 +330,12 @@ export default class Program {
     } else {
       gl.disable(gl.BLEND)
     }
+
+    if (this.isCulling) gl.enable(gl.CULL_FACE)
+    else gl.disable(gl.CULL_FACE)
+
+    if (this.isDepth) gl.enable(gl.DEPTH_TEST)
+    else gl.disable(gl.DEPTH_TEST)
 
     if (uniforms) {
       Object.keys(uniforms).forEach(key => {

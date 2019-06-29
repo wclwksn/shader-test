@@ -97,7 +97,9 @@ export default class Webgl {
       document.body.appendChild(this.canvas)
     }
 
-    this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
+    const gl = this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
+
+    gl.depthFunc(gl.LEQUAL)
   }
 
   createProgram (key, option) {
