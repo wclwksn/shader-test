@@ -212,3 +212,51 @@ export class Godray extends Program {
     super.draw()
   }
 }
+
+export class GodrayLight extends Program {
+  constructor (webgl) {
+    if (!webgl.effects['godraySpecular']) {
+      webgl.effects['godraySpecular'] = new Specular(webgl, {
+        threshold: 0.75
+      })
+    }
+
+    if (!webgl.effects['godrayZoomblur']) {
+      webgl.effects['godrayZoomblur'] = new Zoomblur(webgl)
+    }
+
+    if (!webgl.effects['godrayBlur']) {
+      webgl.effects['godrayBlur'] = new Blur(webgl)
+    }
+
+    const option = {
+      fragmentShader: textureFrag,
+      uniforms: {
+        texture: 'framebuffer'
+      },
+      isAdditive: true,
+      isClear: false
+    }
+    super(webgl, option)
+
+    this.radius = 0.02
+  }
+
+  draw (readFramebufferKey, cacheFramebufferKey, outFramebufferKey, strength, center, radius, isOnscreen) {
+    this.webgl.effects['godraySpecular'].draw(readFramebufferKey, outFramebufferKey)
+
+    this.webgl.effects['godrayZoomblur'].draw(outFramebufferKey, cacheFramebufferKey, strength, center)
+
+    this.webgl.effects['godrayBlur'].draw(
+      cacheFramebufferKey,
+      outFramebufferKey,
+      typeof radius !== 'undefined' ? radius : this.radius
+    )
+
+    this.webgl.bindFramebuffer(isOnscreen ? null : outFramebufferKey)
+
+    this.use()
+    this.uniforms.texture = cacheFramebufferKey
+    super.draw()
+  }
+}

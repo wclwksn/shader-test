@@ -1,22 +1,25 @@
 import Webgl from './modules/webgl'
 import loadImage from './modules/loadImage'
-import { animate, cubicOut } from './modules/animation'
+import { animate, cubicOut, cubicInOut } from './modules/animation'
 import { mix, clamp } from './modules/math'
 
-import mainVert from '../shaders/main.vert'
+import fullVert from '../shaders/template/full.vert'
 import mainFrag from '../shaders/main.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
 import nextFrag from '../shaders/next.frag'
+import godrayFrag from '../shaders/godray.frag'
 
 loadImage([
   require('../images/room.jpg'),
   require('../images/star.jpeg'),
   require('../images/watercolor.jpg'),
+  require('../images/fire.jpg'),
 ]).then(([
   img1,
   img2,
   maskImg,
+  godrayImg,
 ]) => {
   const canvas = document.getElementById('canvas')
   const width = canvas.clientWidth
@@ -26,6 +29,15 @@ loadImage([
   const particlePosition = []
   const particleNormal = []
   const particleUv = []
+  const fullPosition = {
+    value: [
+      -halfWidth, halfHeight, 0,
+      -halfWidth, -halfHeight, 0,
+      halfWidth, halfHeight, 0,
+      halfWidth, -halfHeight, 0
+    ],
+    stride: 3
+  }
 
   for (let j = 0; j < height; j++) {
     for (let i = 0; i < width; i++) {
@@ -68,18 +80,10 @@ loadImage([
         isTransparent: true
       },
       next: {
-        vertexShader: mainVert,
+        vertexShader: fullVert,
         fragmentShader: nextFrag,
         attributes: {
-          position: {
-            value: [
-              -halfWidth, halfHeight, 0,
-              -halfWidth, -halfHeight, 0,
-              halfWidth, halfHeight, 0,
-              halfWidth, -halfHeight, 0
-            ],
-            stride: 3
-          }
+          position: fullPosition
         },
         uniforms: {
           time: 0,
@@ -88,19 +92,22 @@ loadImage([
         },
         isTransparent: true
       },
+      godray: {
+        vertexShader: fullVert,
+        fragmentShader: godrayFrag,
+        attributes: {
+          position: fullPosition
+        },
+        uniforms: {
+          mask: godrayImg,
+        },
+        isTransparent: true
+      },
       main: {
-        vertexShader: mainVert,
+        vertexShader: fullVert,
         fragmentShader: mainFrag,
         attributes: {
-          position: {
-            value: [
-              -halfWidth, halfHeight, 0,
-              -halfWidth, -halfHeight, 0,
-              halfWidth, halfHeight, 0,
-              halfWidth, -halfHeight, 0
-            ],
-            stride: 3
-          }
+          position: fullPosition
         },
         uniforms: {
           time: 0,
@@ -108,18 +115,21 @@ loadImage([
           imageResolution: [img1.width, img1.height],
           mask: maskImg,
           particle: 'framebuffer',
-          next: 'framebuffer'
+          next: 'framebuffer',
+          godray: 'framebuffer',
         }
-      }
+      },
     },
     effects: [
       'bloom',
       'blur',
-      'godray'
+      'godray',
+      'godrayLight'
     ],
     framebuffers: [
       'particle',
       'next',
+      'godray',
       '1',
       '2'
     ],
@@ -162,12 +172,33 @@ loadImage([
     }
 
     {
+      webgl.bindFramebuffer('godray')
+
+      const cTime = cubicInOut(time)
+
+      webgl.programs['godray'].draw()
+
+      webgl.effects['godrayLight'].draw(
+        'godray',
+        'next',
+        'particle',
+        mix(15, 20, cTime),
+        [
+          mix(webgl.canvas.width * 0.5, webgl.canvas.width * 0.65, cTime),
+          mix(webgl.canvas.height * 1, webgl.canvas.height * 1.5, cTime)
+        ],
+        mix(0.4, 1.5, cTime)
+      )
+    }
+
+    {
       webgl.unbindFramebuffer()
 
       webgl.programs['main'].draw({
         time,
         particle: '1',
-        next: '2'
+        next: '2',
+        godray: 'particle',
       })
     }
   }

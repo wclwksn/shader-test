@@ -5,6 +5,7 @@ uniform sampler2D image;
 uniform sampler2D mask;
 uniform sampler2D particle;
 uniform sampler2D next;
+uniform sampler2D godray;
 uniform vec2 imageResolution;
 uniform float time;
 
@@ -29,16 +30,19 @@ void main() {
   vec3 color = texture2D(image, adjustRatio(uv, imageResolution, resolution)).rgb;
   vec3 color2 = texture2D(next, frameBufferUv).rgb;
   vec3 particleColor = texture2D(particle, frameBufferUv).rgb;
+  vec3 godrayColor = texture2D(godray, frameBufferUv).rgb;
 
   vec3 destColor = mix(color2, color, alpha);
 
   destColor = vignette(destColor, nPosition, 1.5);
 
   destColor += particleColor;
+  destColor += godrayColor;
 
   gl_FragColor = vec4(destColor, 1.);
   // gl_FragColor = vec4(particleColor, 1.); // * debug
   // gl_FragColor = vec4(color, 1.); // * debug
   // gl_FragColor = vec4(vec3(existence), 1.); // * debug
   // gl_FragColor = texture2D(next, frameBufferUv); // * debug
+  // gl_FragColor = vec4(godrayColor, 1.); // * debug
 }
