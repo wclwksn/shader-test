@@ -13,6 +13,7 @@ uniform vec2 imageResolution;
 uniform sampler2D image;
 uniform sampler2D mask;
 uniform float time;
+uniform float margin;
 
 varying vec4 vColor;
 
@@ -31,21 +32,23 @@ const float maxAlphaSpeed = 1.5;
 const float maxSize = 2.;
 
 void main() {
+  vec2 pictureResolution = resolution - vec2(margin * 2.);
+
   float existence = getExistence(uv, time, mask);
   existence = max(existence - 0.95, 0.);
   existence = smoothstep(0., 0.5, existence);
   existence = ease(existence);
 
-  float noise = snoise2(uv * resolution * 0.5) / 0.71;
+  float noise = snoise2(uv * pictureResolution * 0.5) / 0.71;
   float plusNoise = (noise + 1.) / 2.;
   float randomValue = random(uv);
 
   vec4 cPosition = vec4(position, 1.);
-  cPosition.x += existence * mix(0.2, 1., plusNoise) * resolution.x * maxXRate;
-  cPosition.y += existence * mix(0.5, 1., plusNoise * randomValue) * sin(time + noise * 3.14 * 2.) * resolution.y * maxYRate;
+  cPosition.x += existence * mix(0.2, 1., plusNoise) * pictureResolution.x * maxXRate;
+  cPosition.y += existence * mix(0.5, 1., plusNoise * randomValue) * sin(time + noise * 3.14 * 2.) * pictureResolution.y * maxYRate;
   cPosition.z += existence * plusNoise * maxZ;
 
-  vColor = texture2D(image, adjustRatio(uv, imageResolution, resolution));
+  vColor = texture2D(image, adjustRatio(uv, imageResolution, pictureResolution));
   vColor *= 1.1;
 
   // vec3 resultNormal = rotateQ(axis, radian) * normal;
@@ -60,7 +63,7 @@ void main() {
   vColor.rgb += ambientColor;
   // vColor.rgb = vec3(noise); // * debug
 
-  float alphaNoise = snoise2(uv * resolution * 2.) / 0.71;
+  float alphaNoise = snoise2(uv * pictureResolution * 2.) / 0.71;
   alphaNoise = (alphaNoise + 1.) / 2.;
   vColor.a = 1. - min(existence * mix(maxAlphaSpeed, 1., alphaNoise), 1.);
   vColor.a *= 1. - step(existence, 0.);

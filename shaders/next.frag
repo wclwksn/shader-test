@@ -4,6 +4,7 @@ uniform vec2 resolution;
 uniform sampler2D image;
 uniform vec2 imageResolution;
 uniform float time;
+uniform float margin;
 
 #pragma glslify: ease = require(glsl-easings/sine-out)
 #pragma glslify: adjustRatio = require(./modules/adjustRatio.glsl)
@@ -13,9 +14,11 @@ const float minZoom = 0.9;
 const float delay = 2.;
 
 void main() {
-  vec2 uv = gl_FragCoord.st / resolution;
+  vec2 pictureResolution = resolution - vec2(margin * 2.);
+
+  vec2 uv = (gl_FragCoord.st - vec2(margin)) / pictureResolution;
   uv.y = 1. - uv.y;
-  uv = adjustRatio(uv, imageResolution, resolution);
+  uv = adjustRatio(uv, imageResolution, pictureResolution);
 
   float cTime = ease(max(time * (1. + delay) - delay, 0.));
 

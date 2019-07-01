@@ -4,14 +4,15 @@ import { animate, cubicOut, cubicInOut } from './modules/animation'
 import { mix, clamp } from './modules/math'
 
 import fullVert from '../shaders/template/full.vert'
-import mainFrag from '../shaders/main.frag'
+import currentFrag from '../shaders/current.frag'
 import particleVert from '../shaders/particle.vert'
 import particleFrag from '../shaders/particle.frag'
 import nextFrag from '../shaders/next.frag'
 import godrayFrag from '../shaders/godray.frag'
+import mainFrag from '../shaders/main.frag'
 
 loadImage([
-  require('../images/room.jpg'),
+  require('../images/room2.jpg'),
   require('../images/star.jpeg'),
   require('../images/watercolor.jpg'),
   require('../images/fire.jpg'),
@@ -26,9 +27,13 @@ loadImage([
   const height = canvas.clientHeight
   const halfWidth = width / 2
   const halfHeight = height / 2
-  const particlePosition = []
-  const particleNormal = []
-  const particleUv = []
+
+  const margin = 50
+  const pictureWidth = width - margin * 2
+  const pictureHeight = height - margin * 2
+  const pictureHalfWidth = pictureWidth / 2
+  const pictureHalfHeight = pictureHeight / 2
+
   const fullPosition = {
     value: [
       -halfWidth, halfHeight, 0,
@@ -38,12 +43,25 @@ loadImage([
     ],
     stride: 3
   }
+  const picturePosition = {
+    value: [
+      -pictureHalfWidth, pictureHalfHeight, 0,
+      -pictureHalfWidth, -pictureHalfHeight, 0,
+      pictureHalfWidth, pictureHalfHeight, 0,
+      pictureHalfWidth, -pictureHalfHeight, 0
+    ],
+    stride: 3
+  }
 
-  for (let j = 0; j < height; j++) {
-    for (let i = 0; i < width; i++) {
-      particlePosition.push(i - halfWidth, j - halfHeight, 0)
+  const particlePosition = []
+  const particleNormal = []
+  const particleUv = []
+
+  for (let j = 0; j < pictureHeight; j++) {
+    for (let i = 0; i < pictureWidth; i++) {
+      particlePosition.push(i - pictureHalfWidth, j - pictureHalfHeight, 0)
       particleNormal.push((Math.random() * 2 - 1) * 0.1, (Math.random() * 2 - 1) * 0.1, 1)
-      particleUv.push(i / width, 1 - j / height)
+      particleUv.push(i / pictureWidth, 1 - j / pictureHeight)
     }
   }
 
@@ -74,23 +92,40 @@ loadImage([
           image: img1,
           imageResolution: [img1.width, img1.height],
           mask: maskImg,
+          margin,
         },
         mode: 'POINTS',
         drawType: 'DYNAMIC_DRAW',
         isTransparent: true
       },
+      current: {
+        vertexShader: fullVert,
+        fragmentShader: currentFrag,
+        attributes: {
+          position: picturePosition
+        },
+        uniforms: {
+          time: 0,
+          image: img1,
+          imageResolution: [img1.width, img1.height],
+          mask: maskImg,
+          margin,
+        },
+        isTransparent: true,
+      },
       next: {
         vertexShader: fullVert,
         fragmentShader: nextFrag,
         attributes: {
-          position: fullPosition
+          position: picturePosition
         },
         uniforms: {
           time: 0,
           image: img2,
-          imageResolution: [img2.width, img2.height]
+          imageResolution: [img2.width, img2.height],
+          margin,
         },
-        isTransparent: true
+        isTransparent: true,
       },
       godray: {
         vertexShader: fullVert,
@@ -110,11 +145,8 @@ loadImage([
           position: fullPosition
         },
         uniforms: {
-          time: 0,
-          image: img1,
-          imageResolution: [img1.width, img1.height],
-          mask: maskImg,
           particle: 'framebuffer',
+          current: 'framebuffer',
           next: 'framebuffer',
           godray: 'framebuffer',
         }
@@ -128,6 +160,7 @@ loadImage([
     ],
     framebuffers: [
       'particle',
+      'current',
       'next',
       'godray',
       '1',
@@ -145,6 +178,14 @@ loadImage([
       })
 
       webgl.effects['bloom'].draw('particle', '2', '1', 0.2)
+    }
+
+    {
+      webgl.bindFramebuffer('current')
+
+      webgl.programs['current'].draw({
+        time,
+      })
     }
 
     {
@@ -197,6 +238,7 @@ loadImage([
       webgl.programs['main'].draw({
         time,
         particle: '1',
+        current: 'current',
         next: '2',
         godray: 'particle',
       })
