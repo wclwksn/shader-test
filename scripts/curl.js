@@ -1,16 +1,11 @@
 import Webgl from './modules/webgl'
-import { animate } from './modules/animation'
 
 import textureFrag from '../shaders/template/texture.frag'
 
-import resetVelocityFrag from '../shaders/curl/resetVelocity.frag'
-import resetPositionFrag from '../shaders/curl/resetPosition.frag'
-import velocityFrag from '../shaders/curl/velocity.frag'
-import positionFrag from '../shaders/curl/position.frag'
 import curlVert from '../shaders/curl/main.vert'
 import curlFrag from '../shaders/curl/main.frag'
 
-const curlSize = 300
+const curlSize = 800
 const curlSizeUniform = [curlSize, curlSize]
 const curlUv = []
 
@@ -21,37 +16,8 @@ for (let j = 0; j < curlSize; j++) {
 }
 
 const webgl = new Webgl({
-  cameraPosition: [0, 0, 50],
-  ambientColor: [0.2, 0.2, 0.2],
+  cameraPosition: [0, 0, Math.min(window.innerWidth, window.innerHeight)],
   programs: {
-    resetVelocity: {
-      fragmentShader: resetVelocityFrag,
-      isFloats: true
-    },
-    resetPosition: {
-      fragmentShader: resetPositionFrag,
-      uniforms: {
-        size: curlSizeUniform
-      },
-      isFloats: true
-    },
-    velocity: {
-      fragmentShader: velocityFrag,
-      uniforms: {
-        size: curlSizeUniform,
-        prevVelocityTexture: 'framebuffer'
-      },
-      isFloats: true
-    },
-    position: {
-      fragmentShader: positionFrag,
-      uniforms: {
-        size: curlSizeUniform,
-        prevPositionTexture: 'framebuffer',
-        velocityTexture: 'framebuffer'
-      },
-      isFloats: true
-    },
     curl: {
       vertexShader: curlVert,
       fragmentShader: curlFrag,
@@ -62,7 +28,7 @@ const webgl = new Webgl({
         }
       },
       uniforms: {
-        positionTexture: 'framebuffer'
+        time: 0
       },
       mode: 'LINE_STRIP',
       isTransparent: true
@@ -84,82 +50,23 @@ const webgl = new Webgl({
     '1',
     '2'
   ],
-  framebufferFloats: {
-    velocity0: {
-      width: curlSize,
-      height: curlSize
-    },
-    velocity1: {
-      width: curlSize,
-      height: curlSize
-    },
-    position0: {
-      width: curlSize,
-      height: curlSize
-    },
-    position1: {
-      width: curlSize,
-      height: curlSize
+  tick: time => {
+    {
+      webgl.bindFramebuffer('scene')
+
+      webgl.programs['curl'].draw({
+        time
+      })
+
+      webgl.effects['bloom'].draw('scene', '2', '1', 8)
     }
-  },
-  isAutoStart: false
+
+    {
+      webgl.unbindFramebuffer()
+
+      webgl.programs['texture'].draw({
+        texture: '1'
+      })
+    }
+  }
 })
-
-let loopCount = 0
-let targetbufferIndex
-let prevbufferIndex
-
-targetbufferIndex = loopCount++ % 2
-
-{
-  webgl.bindFramebuffer('velocity' + targetbufferIndex)
-  webgl.programs['resetVelocity'].draw()
-}
-
-{
-  webgl.bindFramebuffer('position' + targetbufferIndex)
-  webgl.programs['resetPosition'].draw()
-}
-
-const draw = () => {
-  targetbufferIndex = loopCount++ % 2
-  prevbufferIndex = 1 - targetbufferIndex
-
-  {
-    webgl.bindFramebuffer('velocity' + targetbufferIndex)
-
-    webgl.programs['velocity'].draw({
-      prevVelocityTexture: 'velocity' + prevbufferIndex
-    })
-  }
-
-  {
-    webgl.bindFramebuffer('position' + targetbufferIndex)
-
-    webgl.programs['position'].draw({
-      prevPositionTexture: 'position' + prevbufferIndex,
-      velocityTexture: 'velocity' + targetbufferIndex
-    })
-  }
-
-  {
-    webgl.bindFramebuffer('scene')
-
-    webgl.programs['curl'].draw({
-      positionTexture: 'position' + targetbufferIndex
-    })
-
-    webgl.effects['bloom'].draw('scene', '2', '1')
-  }
-
-  {
-    webgl.unbindFramebuffer()
-
-    webgl.programs['texture'].draw({
-      texture: '1'
-    })
-  }
-
-  requestAnimationFrame(draw)
-}
-requestAnimationFrame(draw)

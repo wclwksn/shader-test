@@ -3,15 +3,19 @@ attribute vec2 uv;
 uniform mat4 mvpMatrix;
 
 uniform vec2 resolution;
-uniform sampler2D positionTexture;
+uniform float time;
 
 #pragma glslify: curlNoise = require(glsl-curl-noise)
+#pragma glslify: adjustRatio = require(../modules/adjustRatio.glsl)
+
+const float speed = 0.1;
+const float size = 0.4;
+const float density = 0.7;
 
 void main() {
-  vec3 position = texture2D(positionTexture, uv).xyz;
-  position = curlNoise(position) * min(resolution.x, resolution.y) * 0.5;
+  vec2 cUv = adjustRatio(uv, vec2(1.), resolution);
+  vec3 position = vec3(cUv * 2. - 1., 0.) + time * speed;
+  position = curlNoise(position * density) * min(resolution.x, resolution.y) * size;
 
   gl_Position = mvpMatrix * vec4(position, 1.);
-  // gl_Position = mvpMatrix * vec4(uv * 100., 0., 1.); // * debug
-  gl_PointSize = 0.5;
 }
