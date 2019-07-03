@@ -5,13 +5,14 @@ import textureFrag from '../shaders/template/texture.frag'
 import curlVert from '../shaders/curl/main.vert'
 import curlFrag from '../shaders/curl/main.frag'
 
-const curlSize = 800
-const curlSizeUniform = [curlSize, curlSize]
-const curlUv = []
+const particleOneSideNum = 800
+const bloomRadius = 8
 
-for (let j = 0; j < curlSize; j++) {
-  for (let i = 0; i < curlSize; i++) {
-    curlUv.push(i / curlSize, 1 - j / curlSize)
+const curlUv = []
+const maxI = particleOneSideNum - 1
+for (let j = 0; j < particleOneSideNum; j++) {
+  for (let i = 0; i < particleOneSideNum; i++) {
+    curlUv.push(i / maxI, 1 - j / maxI)
   }
 }
 
@@ -58,7 +59,7 @@ const webgl = new Webgl({
         time
       })
 
-      webgl.effects['bloom'].draw('scene', '2', '1', 8)
+      webgl.effects['bloom'].draw('scene', '2', '1', bloomRadius)
     }
 
     {
