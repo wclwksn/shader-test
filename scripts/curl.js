@@ -51,6 +51,9 @@ const webgl = new Webgl({
     '1',
     '2'
   ],
+  onBefore: () => {
+    document.body.style.backgroundColor = '#c0ebfc'
+  },
   tick: time => {
     {
       webgl.bindFramebuffer('scene')
@@ -69,5 +72,5 @@ const webgl = new Webgl({
         texture: '1'
       })
     }
-  }
+  },
 })

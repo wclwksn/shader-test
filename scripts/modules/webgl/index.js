@@ -32,6 +32,7 @@ export default class Webgl {
       framebuffers = [],
       framebufferFloats = {},
       tick,
+      onBefore,
       onResize,
       isAutoStart = true
     } = option
@@ -81,6 +82,8 @@ export default class Webgl {
       const { width, height } = framebufferFloats[key]
       this.createFramebufferFloat(key, width, height)
     })
+
+    if (onBefore) onBefore()
 
     if (isAutoStart) this.start()
   }
