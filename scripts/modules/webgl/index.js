@@ -123,25 +123,41 @@ export default class Webgl {
     gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderBuffer)
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height)
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRenderBuffer)
-    const fTexture = gl.createTexture()
+    const texture = gl.createTexture()
     const textureIndex = ++this.textureIndex
     gl.activeTexture(gl[`TEXTURE${textureIndex}`])
-    gl.bindTexture(gl.TEXTURE_2D, fTexture)
+    gl.bindTexture(gl.TEXTURE_2D, texture)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fTexture, 0)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
     gl.bindRenderbuffer(gl.RENDERBUFFER, null)
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    // gl.bindTexture(gl.TEXTURE_2D, null)
 
-    this.framebuffers[key] =  {
+    this.framebuffers[key] = {
       framebuffer,
-      textureIndex
+      textureIndex,
+      depthRenderBuffer
     }
   }
+
+  resizeFramebuffer (key, width = this.canvas.width, height = this.canvas.height) {
+    const { gl } = this
+    const {
+      framebuffer,
+      textureIndex,
+      depthRenderBuffer
+    } = this.framebuffers[key]
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderBuffer)
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height)
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRenderBuffer)
+    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+}
 
   createFramebufferFloat (key, width, height = width) {
     const { gl } = this
@@ -188,6 +204,7 @@ export default class Webgl {
   }
 
   setSize () {
+    const { gl } = this
     const width = this.canvas.clientWidth
     const height = this.canvas.clientHeight
 
@@ -195,7 +212,7 @@ export default class Webgl {
     this.canvas.height = height
     this.aspect = width / height
 
-    this.gl.viewport(0, 0, width, height)
+    gl.viewport(0, 0, width, height)
 
     Object.keys(this.programs).forEach(key => {
       const program = this.programs[key]
@@ -211,6 +228,10 @@ export default class Webgl {
         program.use()
         program.uniforms.resolution = [width, height]
       }
+    })
+
+    Object.keys(this.framebuffers).forEach(key => {
+      this.resizeFramebuffer(key)
     })
 
     this.updateCamera()
