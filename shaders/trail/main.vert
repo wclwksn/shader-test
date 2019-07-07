@@ -10,13 +10,15 @@ varying vec2 vUv;
 
 #pragma glslify: curlNoise = require(glsl-curl-noise)
 
+// const float size = 0.2;
+
 void main() {
-  vec3 resultPosition = texture2D(positionTexture, uv).xyz;
-  resultPosition *= min(resolution.x, resolution.y) * 0.003;
-  vPosition = resultPosition;
+  vec3 position = texture2D(positionTexture, uv).xyz;
+  // position *= min(resolution.x, resolution.y) * size;
+  vPosition = position;
   vUv = uv;
 
-  gl_Position = mvpMatrix * vec4(resultPosition, 1.);
+  gl_Position = mvpMatrix * vec4(position, 1.);
   // gl_Position = mvpMatrix * vec4(uv * 100., 0., 1.); // * debug
   gl_PointSize = 0.5;
 }
