@@ -2,29 +2,29 @@ import Webgl from './modules/webgl'
 
 import textureFrag from '../shaders/template/texture.frag'
 
-import curlVert from '../shaders/curl/main.vert'
-import curlFrag from '../shaders/curl/main.frag'
+import mainVert from '../shaders/curl/main.vert'
+import mainFrag from '../shaders/curl/main.frag'
 
 const particleOneSideNum = 800
 const bloomRadius = 8
 
-const curlUv = []
+const uv = []
 const maxI = particleOneSideNum - 1
 for (let j = 0; j < particleOneSideNum; j++) {
   for (let i = 0; i < particleOneSideNum; i++) {
-    curlUv.push(i / maxI, 1 - j / maxI)
+    uv.push(i / maxI, 1 - j / maxI)
   }
 }
 
 const webgl = new Webgl({
-  cameraPosition: [0, 0, Math.min(window.innerWidth, window.innerHeight)],
+  cameraPosition: [0, 0, Math.min(window.innerWidth, window.innerHeight) / 2],
   programs: {
     curl: {
-      vertexShader: curlVert,
-      fragmentShader: curlFrag,
+      vertexShader: mainVert,
+      fragmentShader: mainFrag,
       attributes: {
         uv: {
-          value: curlUv,
+          value: uv,
           stride: 2
         }
       },

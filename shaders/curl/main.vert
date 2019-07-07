@@ -11,7 +11,7 @@ varying vec2 vUv;
 #pragma glslify: adjustRatio = require(../modules/adjustRatio.glsl)
 
 const float speed = 0.1;
-const float size = 0.4;
+const float size = 0.34;
 const float density = 0.7;
 
 void main() {

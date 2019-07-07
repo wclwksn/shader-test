@@ -9,8 +9,8 @@ varying vec2 vUv;
 const float PI = 3.1415926;
 const float PI2 = PI * 2.;
 
-const vec3 color = vec3(192., 235., 252.);
-const float maxAlpha = 0.36;
+const vec3 color = vec3(192., 235., 252.) / 255.;
+const float maxAlpha = 0.4;
 const float minAlpha = 0.01;
 const float speed = 0.5;
 
