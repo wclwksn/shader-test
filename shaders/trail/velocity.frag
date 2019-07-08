@@ -12,6 +12,7 @@ uniform float time;
 const float PI = 3.1415926;
 const float PI2 = PI * 2.;
 
+const float speed = 0.01;
 const float density = 0.7;
 
 void main() {
@@ -26,8 +27,8 @@ void main() {
     offset.x - resolution.x * 0.5,
     -offset.y + resolution.y * 0.5
   );
-  velocity.xy += cOffset - prevPosition.xy;
-  velocity.z += -prevPosition.z;
+  velocity.xy += (cOffset - prevPosition.xy) * speed;
+  velocity.z += -prevPosition.z * speed;
   // velocity.xy += vec2(
   //   cos(PI2 * 0.0001 * time),
   //   sin(PI2 * 0.0001 * time)

@@ -65,6 +65,7 @@ const webgl = new Webgl({
         time: 0,
       },
       isFloats: true,
+      hasResolution: true,
     },
     main: {
       vertexShader: mainVert,
