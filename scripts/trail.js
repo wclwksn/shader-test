@@ -48,8 +48,8 @@ const webgl = new Webgl({
         size: sizeUniform,
         prevVelocityTexture: 'framebuffer',
         prevPositionTexture: 'framebuffer',
-        offset,
         time: 0,
+        offset,
       },
       isFloats: true,
       hasResolution: true,
@@ -78,6 +78,8 @@ const webgl = new Webgl({
       },
       uniforms: {
         positionTexture: 'framebuffer',
+        time: 0,
+        offset,
       },
       mode: 'LINES',
       isTransparent: true
@@ -162,8 +164,8 @@ const draw = time => {
     webgl.programs['position'].draw({
       prevPositionTexture: 'position' + prevbufferIndex,
       velocityTexture: 'velocity' + targetbufferIndex,
-      offset,
       time,
+      offset,
     })
   }
 
@@ -172,6 +174,8 @@ const draw = time => {
 
     webgl.programs['main'].draw({
       positionTexture: 'position' + targetbufferIndex,
+      time,
+      offset,
     })
 
     webgl.effects['bloom'].draw('scene', '2', '1', 0.2)

@@ -17,6 +17,7 @@
     "glsl-fast-gaussian-blur": "^1.0.2",
     "glsl-noise": "^0.0.0",
     "glsl-random": "^0.0.5",
+    "glsl-y-rotate": "^3.0.0",
     "scripts": "^0.1.0"
   }
 }

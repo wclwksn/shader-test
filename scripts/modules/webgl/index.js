@@ -157,7 +157,7 @@ export default class Webgl {
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRenderBuffer)
     gl.activeTexture(gl[`TEXTURE${textureIndex}`])
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
-}
+  }
 
   createFramebufferFloat (key, width, height = width) {
     const { gl } = this
@@ -269,8 +269,8 @@ export default class Webgl {
     matIV.identity(mMatrix)
     matIV.lookAt(
       cameraPosition,
-      [cameraPosition[0], cameraPosition[1], 0.0],
-      [0.0, 1.0, 0.0],
+      [cameraPosition[0], cameraPosition[1], 0],
+      [0, 1, 0],
       vMatrix
     )
     matIV.perspective(fov, this.aspect, near, far, pMatrix)
@@ -278,8 +278,8 @@ export default class Webgl {
 
     cameraRotation[0] = cameraRotation[0] % (Math.PI * 2)
     cameraRotation[1] = cameraRotation[1] % (Math.PI * 2)
-    matIV.rotate(mMatrix, cameraRotation[0], [0.0, 1.0, 0.0], mMatrix)
-    matIV.rotate(mMatrix, cameraRotation[1], [-1.0, 0.0, 0.0], mMatrix)
+    matIV.rotate(mMatrix, cameraRotation[0], [0, 1, 0], mMatrix)
+    matIV.rotate(mMatrix, cameraRotation[1], [-1, 0, 0], mMatrix)
     matIV.multiply(vpMatrix, mMatrix, mvpMatrix)
     matIV.inverse(mMatrix, invMatrix)
 

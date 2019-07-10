@@ -4,8 +4,11 @@ uniform vec2 size;
 uniform sampler2D prevPositionTexture;
 uniform sampler2D velocityTexture;
 uniform vec2 resolution;
-uniform vec2 offset;
 uniform float time;
+uniform vec2 offset;
+
+// #pragma glslify: rotateQ = require(glsl-y-rotate/rotateQ)
+// #pragma glslify: random = require(glsl-random)
 
 const float PI = 3.1415926;
 const float PI2 = PI * 2.;
@@ -41,6 +44,14 @@ void main() {
       -offset.y + resolution.y * 0.5
     )
     : prevPosition.xy;
+
+  // vec3 axis = normalize(vec3(random(vec2(prevPosition.w, 0.)), random(vec2(0., prevPosition.w)), 0.));
+  // // axis.xy += vec2(
+  // //   offset.x - resolution.x * 0.5,
+  // //   -offset.y + resolution.y * 0.5
+  // // );
+  // position *= rotateQ(axis, PI * prevPosition.w);
+
   // position.z =
   //   gl_FragCoord.x < 1.
   //   ? 0.
