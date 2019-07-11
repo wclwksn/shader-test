@@ -10,7 +10,7 @@ import mainVert from '../shaders/trail/main.vert'
 import mainFrag from '../shaders/trail/main.frag'
 
 const length = 80
-const num = 12
+const num = 40
 
 const sizeUniform = [length, num]
 let pointer = [window.innerWidth / 2, window.innerHeight / 2]
@@ -144,7 +144,7 @@ const draw = time => {
   prevbufferIndex = 1 - targetbufferIndex
 
   for (i = 0; i < offset.length; i++) {
-    offset[i] += (pointer[i] - offset[i]) * 0.1
+    offset[i] += (pointer[i] - offset[i]) * 0.15
   }
 
   {

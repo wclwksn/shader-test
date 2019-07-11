@@ -15,6 +15,7 @@ varying vec2 vUv;
 #pragma glslify: random = require(glsl-random)
 
 const float PI = 3.1415926;
+const float PI2 = PI * 2.;
 
 void main() {
   vec4 position = texture2D(positionTexture, uv);
@@ -24,8 +25,17 @@ void main() {
     -offset.y + resolution.y * 0.5
   );
 
-  vec3 axis = normalize(vec3(random(vec2(position.w, 0.)), random(vec2(0., position.w)), 0.));
-  position.xyz *= rotateQ(axis, PI * position.w);
+  vec3 axis = normalize(vec3(
+    random(vec2(position.w, 0.)),
+    random(vec2(0., position.w)),
+    random(vec2(position.w, 1.))
+  ));
+  // vec3 axis = normalize(
+  //   mod(position.w * 10., 2.) < 1.
+  //   ? vec3(1., 0., 0.)
+  //   : vec3(0., 1., 0.)
+  // );
+  position.xyz *= rotateQ(axis, PI2 * position.w);
 
   position.xy += vec2(
     offset.x - resolution.x * 0.5,

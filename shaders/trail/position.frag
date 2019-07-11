@@ -13,7 +13,9 @@ uniform vec2 offset;
 const float PI = 3.1415926;
 const float PI2 = PI * 2.;
 
-const float speed = 0.01;
+const float speed = 0.0015;
+const float radius = 20.;
+const float largeRadius = 80.;
 
 void main() {
   float prevX =
@@ -33,12 +35,13 @@ void main() {
   //   (resolution.y - offset.y) - resolution.y * 0.5
   // ) * 0.01;
   vec3 position = prevPosition.xyz;
+  float radian = PI2 * time * speed;
   position.xy =
     gl_FragCoord.x < 1.
     ? vec2(
-      cos(PI2 * time * 0.001),
-      sin(PI2 * time * 0.001)
-    ) * 100.
+      cos(radian),
+      sin(radian)
+    ) * (gl_FragCoord.y < 3. ? largeRadius : radius)
     + vec2(
       offset.x - resolution.x * 0.5,
       -offset.y + resolution.y * 0.5
