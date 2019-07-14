@@ -22,7 +22,7 @@ export default class Program {
       attributes,
       instancedAttributes,
       uniforms,
-      mode = 'TRIANGLE_STRIP',
+      mode,
       drawType = 'STATIC_DRAW',
       isTransparent = false,
       isAdditive = false,
@@ -42,7 +42,8 @@ export default class Program {
 
     const isWhole = !option.vertexShader
 
-    this.mode = gl[mode]
+    this.mode = mode
+    this.glMode = gl[mode || 'TRIANGLE_STRIP']
     this.drawType = drawType
     this.isTransparent = isTransparent
     this.isAdditive = isAdditive
@@ -115,54 +116,64 @@ export default class Program {
 
   createAttribute (data, isInstanced) {
     Object.keys(data).forEach(key => {
-      const { value, stride } = data[key]
+      const { value, stride, isIndices } = data[key]
 
-      this.addAttribute(key, value, stride, isInstanced)
+      this.addAttribute(key, value, stride, isIndices, isInstanced)
     })
   }
 
-  addAttribute (key, value, stride, isInstanced) {
+  addAttribute (key, value, stride, isIndices, isInstanced) {
     const { gl } = this.webgl
     const location = gl.getAttribLocation(this.program, key)
-    const data = new Float32Array(value)
     const attribute = this.attributes[key] = {
       location,
       stride,
-      data,
+      data: value,
       isInstanced
     }
 
-    if (isInstanced) {
-      this.instanceCount = this.instanceCount || value.length / stride
+    if (isIndices) {
+      const ibo = gl.createBuffer()
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int16Array(value), gl[this.drawType])
+      attribute.ibo = ibo
+
+      this.indicesCount = this.indicesCount || value.length
+      this.glMode = gl[this.mode || 'TRIANGLES']
     } else {
+      const vbo = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(value), gl[this.drawType])
+      attribute.vbo = vbo
+
+      if (isInstanced) {
+        this.instanceCount = this.instanceCount || value.length / stride
+      }
       this.count = this.count || value.length / stride
     }
-
-    const vbo = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl[this.drawType])
-    attribute.vbo = vbo
-
-    this.setAttribute(key)
   }
 
   setAttribute (key) {
     const { gl } = this.webgl
-    const { location, stride, vbo, isInstanced } = this.attributes[key]
+    const { location, stride, vbo, ibo, isInstanced } = this.attributes[key]
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.enableVertexAttribArray(location)
-    gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
-    if (isInstanced) this.instancedArraysExt.vertexAttribDivisorANGLE(location, 1)
+    if (ibo) {
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+      gl.enableVertexAttribArray(location)
+      gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
+      if (isInstanced) this.instancedArraysExt.vertexAttribDivisorANGLE(location, 1)
+    }
   }
 
   updateAttribute (key, index, value) {
     const { gl } = this.webgl
-    const { location, stride, vbo, data } = this.attributes[key]
+    const { vbo, data } = this.attributes[key]
 
     data[index] = value
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data)
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(data))
   }
 
   createWholeAttribute () {
@@ -347,7 +358,18 @@ export default class Program {
       this.setAttribute(key)
     })
 
-    if (this.isInstanced) this.instancedArraysExt.drawArraysInstancedANGLE(this.mode, 0, this.count, this.instanceCount)
-    else gl.drawArrays(this.mode, 0, this.count)
+    if (this.isInstanced) {
+      if (this.indicesCount) {
+        this.instancedArraysExt.drawElementsInstancedANGLE(this.glMode, this.indicesCount, gl.UNSIGNED_SHORT, 0, this.instanceCount)
+      } else {
+        this.instancedArraysExt.drawArraysInstancedANGLE(this.glMode, 0, this.count, this.instanceCount)
+      }
+    } else {
+      if (this.indicesCount) {
+        gl.drawElements(this.glMode, this.indicesCount, gl.UNSIGNED_SHORT, 0)
+      } else {
+        gl.drawArrays(this.glMode, 0, this.count)
+      }
+    }
   }
 }

@@ -1,8 +1,9 @@
 {
   "scripts": {
-    "dev": "parcel index.html --open",
-    "dev:curl": "parcel curl.html --open",
-    "dev:trail": "parcel trail.html --open",
+    "dev": "parcel index.html",
+    "dev:curl": "parcel curl.html",
+    "dev:trail": "parcel trail.html",
+    "dev:webcam": "parcel webcam.html",
     "build": "parcel build index.html"
   },
   "devDependencies": {
