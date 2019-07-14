@@ -9,81 +9,51 @@ import positionFrag from '../shaders/webcam/position.frag'
 import mainVert from '../shaders/webcam/main.vert'
 import mainFrag from '../shaders/webcam/main.frag'
 
-// const length = 80
-// const num = 40
 const width = 100
 const height = 100
-// const pointSize = 1
-// const pointHalfSize = pointSize / 2
 
-// const sizeUniform = [length, num]
-// let pointer = [window.innerWidth / 2, window.innerHeight / 2]
-// let offset = pointer
-// const uv = []
-
-// for (let j = 0; j < num; j++) {
-//   for (let i = 0; i < length; i++) {
-//     uv.push(i / length, 1 - j / num)
-//   }
-// }
-
-const halfWidth = width / 2
-const halfHeight = height / 2
-const particlePosition = []
-const particleNormal = []
+const sizeUniform = [width, height]
 const particleUv = []
+
 for (let j = 0; j < height; j++) {
   for (let i = 0; i < width; i++) {
-    // particlePosition.push(0, 0, 0)
-    particlePosition.push(i - halfWidth, j - halfHeight, 0)
-    // particleNormal.push((Math.random() * 2 - 1) * 0.1, (Math.random() * 2 - 1) * 0.1, 1)
-    // particleUv.push(i / width, 1 - j / height)
+    particleUv.push(i / (width - 1), 1 - j / (height - 1))
   }
 }
 
 const webgl = new Webgl({
   cameraPosition: [0, 0, Math.min(window.innerWidth, window.innerHeight)],
   programs: {
-    // resetVelocity: {
-    //   fragmentShader: resetVelocityFrag,
-    //   uniforms: {
-    //     size: sizeUniform
-    //   },
-    //   isFloats: true,
-    // },
-    // resetPosition: {
-    //   fragmentShader: resetPositionFrag,
-    //   uniforms: {
-    //     size: sizeUniform
-    //   },
-    //   isFloats: true,
-    //   hasResolution: true,
-    // },
-    // velocity: {
-    //   fragmentShader: velocityFrag,
-    //   uniforms: {
-    //     size: sizeUniform,
-    //     prevVelocityTexture: 'framebuffer',
-    //     prevPositionTexture: 'framebuffer',
-    //     time: 0,
-    //     offset,
-    //   },
-    //   isFloats: true,
-    //   hasResolution: true,
-    //   hasTime: true,
-    // },
-    // position: {
-    //   fragmentShader: positionFrag,
-    //   uniforms: {
-    //     size: sizeUniform,
-    //     prevPositionTexture: 'framebuffer',
-    //     velocityTexture: 'framebuffer',
-    //     offset,
-    //     time: 0,
-    //   },
-    //   isFloats: true,
-    //   hasResolution: true,
-    // },
+    resetVelocity: {
+      fragmentShader: resetVelocityFrag,
+      isFloats: true,
+    },
+    resetPosition: {
+      fragmentShader: resetPositionFrag,
+      uniforms: {
+        size: sizeUniform
+      },
+      isFloats: true,
+      // hasResolution: true,
+    },
+    velocity: {
+      fragmentShader: velocityFrag,
+      uniforms: {
+        size: sizeUniform,
+        prevVelocityTexture: 'framebuffer',
+        prevPositionTexture: 'framebuffer',
+      },
+      isFloats: true,
+    },
+    position: {
+      fragmentShader: positionFrag,
+      uniforms: {
+        size: sizeUniform,
+        prevPositionTexture: 'framebuffer',
+        velocityTexture: 'framebuffer',
+      },
+      isFloats: true,
+    },
     main: {
       vertexShader: mainVert,
       fragmentShader: mainFrag,
@@ -102,17 +72,14 @@ const webgl = new Webgl({
         },
       },
       instancedAttributes: {
-        instancedPosition: {
-          value: particlePosition,
-          size: 3
-        },
-        // instancedUv: {
-        //   value: particleUv,
-        //   size: 2
-        // }
+        instancedUv: {
+          value: particleUv,
+          size: 2
+        }
       },
       uniforms: {
-        time: 0
+        positionTexture: 'framebuffer',
+        time: 0,
       },
       // mode: 'LINE_STRIP',
       isDepth: true,
@@ -135,81 +102,72 @@ const webgl = new Webgl({
     '1',
     '2'
   ],
-  // framebufferFloats: {
-  //   velocity0: {
-  //     width: length,
-  //     height: num
-  //   },
-  //   velocity1: {
-  //     width: length,
-  //     height: num
-  //   },
-  //   position0: {
-  //     width: length,
-  //     height: num
-  //   },
-  //   position1: {
-  //     width: length,
-  //     height: num
-  //   }
-  // },
+  framebufferFloats: {
+    velocity0: {
+      width,
+      height
+    },
+    velocity1: {
+      width,
+      height
+    },
+    position0: {
+      width,
+      height
+    },
+    position1: {
+      width,
+      height
+    }
+  },
   isAutoStart: false
 })
 
-// let loopCount = 0
-// let targetbufferIndex
-// let prevbufferIndex
-// let i
+let loopCount = 0
+let targetbufferIndex
+let prevbufferIndex
+let i
 
-// targetbufferIndex = loopCount++ % 2
+targetbufferIndex = loopCount++ % 2
 
-// {
-//   webgl.bindFramebuffer('velocity' + targetbufferIndex)
-//   webgl.programs['resetVelocity'].draw()
-// }
+{
+  webgl.bindFramebuffer('velocity' + targetbufferIndex)
+  webgl.programs['resetVelocity'].draw()
+}
 
-// {
-//   webgl.bindFramebuffer('position' + targetbufferIndex)
-//   webgl.programs['resetPosition'].draw()
-// }
+{
+  webgl.bindFramebuffer('position' + targetbufferIndex)
+  webgl.programs['resetPosition'].draw()
+}
 
 const draw = time => {
-  // targetbufferIndex = loopCount++ % 2
-  // prevbufferIndex = 1 - targetbufferIndex
+  targetbufferIndex = loopCount++ % 2
+  prevbufferIndex = 1 - targetbufferIndex
 
-  // for (i = 0; i < offset.length; i++) {
-  //   offset[i] += (pointer[i] - offset[i]) * 0.15
-  // }
+  {
+    webgl.bindFramebuffer('velocity' + targetbufferIndex)
 
-  // {
-  //   webgl.bindFramebuffer('velocity' + targetbufferIndex)
+    webgl.programs['velocity'].draw({
+      prevVelocityTexture: 'velocity' + prevbufferIndex,
+      prevPositionTexture: 'position' + prevbufferIndex,
+    })
+  }
 
-  //   webgl.programs['velocity'].draw({
-  //     prevVelocityTexture: 'velocity' + prevbufferIndex,
-  //     prevPositionTexture: 'position' + prevbufferIndex,
-  //     offset,
-  //     time,
-  //   })
-  // }
+  {
+    webgl.bindFramebuffer('position' + targetbufferIndex)
 
-  // {
-  //   webgl.bindFramebuffer('position' + targetbufferIndex)
-
-  //   webgl.programs['position'].draw({
-  //     prevPositionTexture: 'position' + prevbufferIndex,
-  //     velocityTexture: 'velocity' + targetbufferIndex,
-  //     time,
-  //     offset,
-  //   })
-  // }
+    webgl.programs['position'].draw({
+      prevPositionTexture: 'position' + prevbufferIndex,
+      velocityTexture: 'velocity' + targetbufferIndex,
+    })
+  }
 
   {
     webgl.bindFramebuffer('scene')
 
     webgl.programs['main'].draw({
-      // positionTexture: 'position' + targetbufferIndex,
+      positionTexture: 'position' + targetbufferIndex,
       time,
-      // offset,
     })
 
     webgl.effects['bloom'].draw('scene', '2', '1')
@@ -226,7 +184,3 @@ const draw = time => {
   requestAnimationFrame(draw)
 }
 requestAnimationFrame(draw)
-
-// window.addEventListener('mousemove', event => {
-//   pointer = [event.clientX, event.clientY]
-// })
