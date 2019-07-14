@@ -73,7 +73,7 @@ const webgl = new Webgl({
       attributes: {
         uv: {
           value: uv,
-          stride: 2
+          size: 2
         }
       },
       uniforms: {

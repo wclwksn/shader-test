@@ -2,7 +2,7 @@ const noneVert = 'attribute vec2 position;void main(){gl_Position=vec4(position,
 const noneAttribute = {
   position: {
     value: [-1, 1, -1, -1, 1, 1, 1, -1],
-    stride: 2
+    size: 2
   }
 }
 
@@ -116,18 +116,18 @@ export default class Program {
 
   createAttribute (data, isInstanced) {
     Object.keys(data).forEach(key => {
-      const { value, stride, isIndices } = data[key]
+      const { value, size, isIndices } = data[key]
 
-      this.addAttribute(key, value, stride, isIndices, isInstanced)
+      this.addAttribute(key, value, size, isIndices, isInstanced)
     })
   }
 
-  addAttribute (key, value, stride, isIndices, isInstanced) {
+  addAttribute (key, value, size, isIndices, isInstanced) {
     const { gl } = this.webgl
     const location = gl.getAttribLocation(this.program, key)
     const attribute = this.attributes[key] = {
       location,
-      stride,
+      size,
       data: value,
       isInstanced
     }
@@ -147,22 +147,22 @@ export default class Program {
       attribute.vbo = vbo
 
       if (isInstanced) {
-        this.instanceCount = this.instanceCount || value.length / stride
+        this.instanceCount = this.instanceCount || value.length / size
       }
-      this.count = this.count || value.length / stride
+      this.count = this.count || value.length / size
     }
   }
 
   setAttribute (key) {
     const { gl } = this.webgl
-    const { location, stride, vbo, ibo, isInstanced } = this.attributes[key]
+    const { location, size, vbo, ibo, isInstanced } = this.attributes[key]
 
     if (ibo) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
     } else {
       gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
       gl.enableVertexAttribArray(location)
-      gl.vertexAttribPointer(location, stride, gl.FLOAT, false, 0, 0)
+      gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0)
       if (isInstanced) this.instancedArraysExt.vertexAttribDivisorANGLE(location, 1)
     }
   }

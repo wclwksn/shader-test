@@ -41,7 +41,7 @@ loadImage([
       halfWidth, halfHeight, 0,
       halfWidth, -halfHeight, 0
     ],
-    stride: 3
+    size: 3
   }
   const picturePosition = {
     value: [
@@ -50,7 +50,7 @@ loadImage([
       pictureHalfWidth, pictureHalfHeight, 0,
       pictureHalfWidth, -pictureHalfHeight, 0
     ],
-    stride: 3
+    size: 3
   }
 
   const particlePosition = []
@@ -76,15 +76,15 @@ loadImage([
         attributes: {
           position: {
             value: particlePosition,
-            stride: 3
+            size: 3
           },
           normal: {
             value: particleNormal,
-            stride: 3
+            size: 3
           },
           uv: {
             value: particleUv,
-            stride: 2
+            size: 2
           }
         },
         uniforms: {
