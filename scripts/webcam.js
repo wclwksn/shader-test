@@ -22,7 +22,8 @@ for (let j = 0; j < height; j++) {
 }
 
 const webgl = new Webgl({
-  cameraPosition: [0, 0, Math.min(window.innerWidth, window.innerHeight)],
+  cameraPosition: [0, 0, 450.],
+  fov: 50,
   programs: {
     resetVelocity: {
       fragmentShader: resetVelocityFrag,
@@ -31,7 +32,7 @@ const webgl = new Webgl({
     resetPosition: {
       fragmentShader: resetPositionFrag,
       uniforms: {
-        size: sizeUniform
+        size: sizeUniform,
       },
       isFloats: true,
       // hasResolution: true,
@@ -79,11 +80,12 @@ const webgl = new Webgl({
       },
       uniforms: {
         positionTexture: 'framebuffer',
+        velocityTexture: 'framebuffer',
         time: 0,
       },
       // mode: 'LINE_STRIP',
       isDepth: true,
-      // isTransparent: true,
+      isTransparent: true,
     },
     texture: {
       fragmentShader: textureFrag,
@@ -167,10 +169,11 @@ const draw = time => {
 
     webgl.programs['main'].draw({
       positionTexture: 'position' + targetbufferIndex,
+      velocityTexture: 'velocity' + targetbufferIndex,
       time,
     })
 
-    webgl.effects['bloom'].draw('scene', '2', '1')
+    webgl.effects['bloom'].draw('scene', '2', '1', 0.5)
   }
 
   {
