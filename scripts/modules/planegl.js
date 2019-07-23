@@ -6,15 +6,14 @@ export default class Planegl {
 
     const {
       canvas,
-      fragmentShaderSelector,
-      fragmentShader = document.querySelector(fragmentShaderSelector).textContent,
+      fragmentShaderId,
+      fragmentShader = document.getElementById(fragmentShaderId).textContent,
       uniforms,
       clearedColor,
       tick,
       hasResolution = true,
       hasTime = true,
-      onResize,
-      isAutoStart = true
+      onResize
     } = option
 
     this.tick = tick
@@ -35,7 +34,7 @@ export default class Planegl {
 
     this.initSize()
 
-    if (isAutoStart) this.start()
+    this.start()
   }
 
   initWebgl (canvas) {
@@ -110,8 +109,23 @@ export default class Planegl {
   }
 
   addUniform (key, value) {
+    const { gl } = this
+    let originalType
     let uniformType
     let uniformValue = value
+
+    const getTypeFromString = (type, value) => {
+      switch (type) {
+        case 'image':
+          originalType = 'image'
+          uniformType = '1i'
+          uniformValue = this.createTexture(key, value)
+          break
+        default:
+          uniformType = type
+          uniformValue = value
+      }
+    }
 
     switch (typeof value) {
       case 'number':
@@ -119,6 +133,9 @@ export default class Planegl {
         break
       case 'boolean':
         uniformType = '1i'
+        break
+      case 'string':
+        getTypeFromString(value)
         break
       case 'object':
         switch (value.constructor.name) {
@@ -131,13 +148,7 @@ export default class Planegl {
             uniformValue = this.createTexture(key, value)
             break
           case 'Object':
-            if (value.type === 'image') {
-              uniformType = '1i'
-              uniformValue = this.createTexture(key, value.value)
-            } else {
-              uniformType = value.type
-              uniformValue = value.value
-            }
+            getTypeFromString(value.type, value.value)
             break
         }
         break
@@ -148,27 +159,33 @@ export default class Planegl {
       return
     }
 
-    this.uniforms[key] = {
-      location: this.gl.getUniformLocation(this.program, key),
-      type: `uniform${uniformType}`
+    const location = gl.getUniformLocation(this.program, key)
+    const type = `uniform${uniformType}`
+
+    let set
+    switch (originalType) {
+      case 'image':
+        set = textureKey => {
+          gl[type](location, this.textureIndexes[textureKey])
+        }
+        break
+      default:
+        set = newValue => {
+          gl[type](location, newValue)
+        }
     }
 
-    if (typeof uniformValue !== 'undefined') this.setUniform(key, uniformValue)
-  }
+    Object.defineProperty(this.uniforms, key, { set })
 
-  setUniform (key, value) {
-    const uniform = this.uniforms[key]
-    if (!uniform) return
-
-    this.gl[uniform.type](uniform.location, value)
+    if (typeof uniformValue !== 'undefined') this.uniforms[key] = uniformValue
   }
 
   createTexture (key, el) {
     const { gl } = this
     const texture = gl.createTexture()
-    this.textureIndexes[key] = ++this.textureIndex
+    const textureIndex = this.textureIndexes[key] = ++this.textureIndex
 
-    gl.activeTexture(gl[`TEXTURE${this.textureIndex}`])
+    gl.activeTexture(gl[`TEXTURE${textureIndex}`])
     gl.bindTexture(gl.TEXTURE_2D, texture)
     // gl.generateMipmap(gl.TEXTURE_2D)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -177,7 +194,7 @@ export default class Planegl {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el)
 
-    return this.textureIndex
+    return textureIndex
   }
 
   updateTexture (key, el) {
@@ -199,7 +216,7 @@ export default class Planegl {
     this.canvas.height = height
 
     this.gl.viewport(0, 0, width, height)
-    if (this.hasResolution) this.setUniform('resolution', [width, height])
+    if (this.hasResolution) this.uniforms.resolution = [width, height]
 
     if (this.onResize) this.onResize()
   }
@@ -222,21 +239,14 @@ export default class Planegl {
 
       if (this.clearedColor) gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-      if (this.hasTime) this.setUniform('time', time)
+      if (this.hasTime) this.uniforms.time = time
 
       if (this.tick) this.tick(time)
 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
-      this.requestID = requestAnimationFrame(render)
+      requestAnimationFrame(render)
     }
-    this.requestID = requestAnimationFrame(render)
-  }
-
-  stop () {
-    if (!this.requestID) return
-
-    cancelAnimationFrame(this.requestID)
-    this.requestID = null
+    requestAnimationFrame(render)
   }
 }
