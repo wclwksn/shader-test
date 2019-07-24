@@ -21,9 +21,9 @@ varying vec4 vColor;
 const float PI = 3.1415926;
 const float PI2 = PI * 2.;
 
-const float colorInterval = PI2 * 6.;
+const float colorInterval = PI2 * 10.;
 const float scale = 2.;
-const float rotationSpeed = 20.;
+const float rotationSpeed = 100.;
 const float minRotationSpeed = 0.1;
 
 void main () {
@@ -31,11 +31,12 @@ void main () {
   vec4 instancedPosition = texture2D(positionTexture, instancedUv);
   float randomValue = instancedPosition.w;
 
-  float life = texture2D(velocityTexture, instancedUv).w;
-  life = smoothstep(0.05, 0.08, life);
+  float velocity = texture2D(velocityTexture, instancedUv).w;
+  float life = smoothstep(0.01, 0.04, velocity);
 
-  float cScale = 2.;
+  float cScale = scale;
   cScale *= life;
+  cScale *= mix(1., 1.2, (instancedPosition.z - 1.) * 0.01);
   modelPosition *= 0.5 * cScale;
 
   vec3 axis = normalize(vec3(
@@ -44,8 +45,7 @@ void main () {
     random(vec2(randomValue, 1.))
   ));
   float radian = PI2 * random(vec2(randomValue));
-  radian += time * 0.001 * mix(minRotationSpeed, rotationSpeed, randomValue);
-  radian *= life;
+  radian += velocity * mix(minRotationSpeed, rotationSpeed, randomValue);
   mat3 rotate = rotateQ(axis, radian);
   modelPosition *= rotate;
 

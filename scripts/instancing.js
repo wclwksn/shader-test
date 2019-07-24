@@ -1,13 +1,13 @@
-import Webgl from './modules/webgl'
+// import Webgl from './modules/webgl'
 
 import textureFrag from '../shaders/template/texture.frag'
 
-import resetVelocityFrag from '../shaders/webcam/resetVelocity.frag'
-import resetPositionFrag from '../shaders/webcam/resetPosition.frag'
-import velocityFrag from '../shaders/webcam/velocity.frag'
-import positionFrag from '../shaders/webcam/position.frag'
-import mainVert from '../shaders/webcam/main.vert'
-import mainFrag from '../shaders/webcam/main.frag'
+import resetVelocityFrag from '../shaders/instancing/resetVelocity.frag'
+import resetPositionFrag from '../shaders/instancing/resetPosition.frag'
+import velocityFrag from '../shaders/instancing/velocity.frag'
+import positionFrag from '../shaders/instancing/position.frag'
+import mainVert from '../shaders/instancing/main.vert'
+import mainFrag from '../shaders/instancing/main.frag'
 
 const width = 100
 const height = 100
@@ -21,8 +21,8 @@ for (let j = 0; j < height; j++) {
   }
 }
 
-const webgl = new Webgl({
-  cameraPosition: [0, 0, 450.],
+const webgl = new Kgl({
+  cameraPosition: [0, 0, 480.],
   fov: 50,
   programs: {
     resetVelocity: {
@@ -173,14 +173,15 @@ const draw = time => {
       time,
     })
 
-    webgl.effects['bloom'].draw('scene', '2', '1', 0.5)
+    // webgl.effects['bloom'].draw('scene', '2', '1', 0.5)
   }
 
   {
     webgl.unbindFramebuffer()
 
     webgl.programs['texture'].draw({
-      texture: '1'
+      // texture: '1',
+      texture: 'scene',
     })
   }
 

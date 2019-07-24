@@ -16,7 +16,7 @@ void main () {
   vec3 prevPosition = texture2D(prevPositionTexture, uv).xyz;
   velocity.xyz += curlNoise(prevPosition * density) * speed;
   velocity.xyz *= velocity.w;
-  if (velocity.w > 0.05) {
+  if (velocity.w > 0.01) {
     velocity.w -= velocity.w * ease;
   } else {
     velocity.w = 1.;
