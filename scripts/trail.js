@@ -1,16 +1,14 @@
-import Webgl from './modules/webgl'
+// import Webgl from './modules/webgl'
 
 import textureFrag from '../shaders/template/texture.frag'
 
-import resetVelocityFrag from '../shaders/trail/resetVelocity.frag'
 import resetPositionFrag from '../shaders/trail/resetPosition.frag'
-import velocityFrag from '../shaders/trail/velocity.frag'
 import positionFrag from '../shaders/trail/position.frag'
 import mainVert from '../shaders/trail/main.vert'
 import mainFrag from '../shaders/trail/main.frag'
 
 const length = 80
-const num = 40
+const num = 80
 
 const sizeUniform = [length, num]
 let pointer = [window.innerWidth / 2, window.innerHeight / 2]
@@ -23,17 +21,10 @@ for (let j = 0; j < num; j++) {
   }
 }
 
-const webgl = new Webgl({
+const webgl = new Kgl({
   cameraPosition: [0, 0, Math.min(window.innerWidth, window.innerHeight) * 2],
   ambientColor: [0.2, 0.2, 0.2],
   programs: {
-    resetVelocity: {
-      fragmentShader: resetVelocityFrag,
-      uniforms: {
-        size: sizeUniform
-      },
-      isFloats: true,
-    },
     resetPosition: {
       fragmentShader: resetPositionFrag,
       uniforms: {
@@ -42,25 +33,11 @@ const webgl = new Webgl({
       isFloats: true,
       hasResolution: true,
     },
-    velocity: {
-      fragmentShader: velocityFrag,
-      uniforms: {
-        size: sizeUniform,
-        prevVelocityTexture: 'framebuffer',
-        prevPositionTexture: 'framebuffer',
-        time: 0,
-        offset,
-      },
-      isFloats: true,
-      hasResolution: true,
-      hasTime: true,
-    },
     position: {
       fragmentShader: positionFrag,
       uniforms: {
         size: sizeUniform,
         prevPositionTexture: 'framebuffer',
-        velocityTexture: 'framebuffer',
         offset,
         time: 0,
       },
@@ -102,14 +79,6 @@ const webgl = new Webgl({
     '2'
   ],
   framebufferFloats: {
-    velocity0: {
-      width: length,
-      height: num
-    },
-    velocity1: {
-      width: length,
-      height: num
-    },
     position0: {
       width: length,
       height: num
@@ -130,11 +99,6 @@ let i
 targetbufferIndex = loopCount++ % 2
 
 {
-  webgl.bindFramebuffer('velocity' + targetbufferIndex)
-  webgl.programs['resetVelocity'].draw()
-}
-
-{
   webgl.bindFramebuffer('position' + targetbufferIndex)
   webgl.programs['resetPosition'].draw()
 }
@@ -144,18 +108,7 @@ const draw = time => {
   prevbufferIndex = 1 - targetbufferIndex
 
   for (i = 0; i < offset.length; i++) {
-    offset[i] += (pointer[i] - offset[i]) * 0.15
-  }
-
-  {
-    webgl.bindFramebuffer('velocity' + targetbufferIndex)
-
-    webgl.programs['velocity'].draw({
-      prevVelocityTexture: 'velocity' + prevbufferIndex,
-      prevPositionTexture: 'position' + prevbufferIndex,
-      offset,
-      time,
-    })
+    offset[i] += (pointer[i] - offset[i]) * 0.05
   }
 
   {
@@ -163,7 +116,6 @@ const draw = time => {
 
     webgl.programs['position'].draw({
       prevPositionTexture: 'position' + prevbufferIndex,
-      velocityTexture: 'velocity' + targetbufferIndex,
       time,
       offset,
     })
@@ -178,7 +130,7 @@ const draw = time => {
       offset,
     })
 
-    webgl.effects['bloom'].draw('scene', '2', '1', 0.2)
+    webgl.effects['bloom'].draw('scene', '2', '1')
   }
 
   {
