@@ -9,7 +9,6 @@ uniform mat4 invMatrix;
 uniform vec3 lightDirection;
 uniform vec3 ambientColor;
 uniform vec3 eyeDirection;
-uniform vec2 resolution;
 uniform float time;
 
 varying vec4 vColor;
@@ -23,6 +22,7 @@ const float PI2 = PI * 2.;
 
 const float colorInterval = PI2 * 10.;
 const float scale = 2.;
+const float maxScaleRate = 1.4;
 const float rotationSpeed = 100.;
 const float minRotationSpeed = 0.1;
 
@@ -36,7 +36,7 @@ void main () {
 
   float cScale = scale;
   cScale *= life;
-  cScale *= mix(1., 1.2, (instancedPosition.z - 1.) * 0.01);
+  cScale *= mix(1., maxScaleRate, (instancedPosition.z - 1.) * 0.01);
   modelPosition *= 0.5 * cScale;
 
   vec3 axis = normalize(vec3(

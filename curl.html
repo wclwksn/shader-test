@@ -17,7 +17,7 @@ canvas {
 </style>
 
 <body>
-<script src="https://unpkg.com/@ko-yelie/kgl"></script>
+<script src="https://unpkg.com/@ko-yelie/kgl@0.2.0/dist/index.iife.min.js"></script>
 
 <script type="x-shader/x-vertex" id="vs">
   attribute vec2 uv;
@@ -133,6 +133,7 @@ canvas {
                                   dot(p2,x2), dot(p3,x3) ) );
     }
 
+  // https://www.npmjs.com/package/glsl-curl-noise
   vec3 snoiseVec3( vec3 x ){
 
     float s  = snoise(vec3( x ));

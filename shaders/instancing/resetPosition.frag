@@ -1,7 +1,6 @@
 precision highp float;
 
 uniform vec2 size;
-// uniform vec2 resolution;
 
 #pragma glslify: random = require(glsl-random)
 

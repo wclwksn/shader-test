@@ -1,0 +1,50 @@
+<title>Test</title>
+
+<style>
+html,
+body {
+  height: 100%;
+}
+body {
+  overflow: hidden;
+  margin: 0;
+}
+canvas {
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+<body>
+<script src="https://unpkg.com/@ko-yelie/kgl@0.2.0/dist/index.iife.min.js"></script>
+
+<!-- Shader -->
+<script type="x-shader/x-fragment" id="fs">
+  precision highp float;
+
+  uniform vec2 resolution;
+  uniform float time;
+
+  void main() {
+    gl_FragColor = vec4(vec3(length(gl_FragCoord.xy / resolution) * (sin(time) * 0.5 + 0.5)), 1.);
+  }
+</script>
+
+<script>
+  const webgl = new Kgl({
+    programs: {
+      main: {
+        fragmentShaderId: 'fs',
+        uniforms: {
+          time: 0
+        },
+      }
+    },
+    tick: time => {
+      webgl.programs['main'].draw({
+        time
+      })
+    },
+  })
+</script>
+</body>

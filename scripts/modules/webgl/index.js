@@ -2,7 +2,7 @@ import matIV from './minMatrix.js'
 import Program from './program'
 import * as effects from './effects'
 
-export default class Webgl {
+export default class Kgl {
   constructor (option) {
     this.programs = {}
     this.effects = {}
@@ -148,8 +148,10 @@ export default class Webgl {
     const {
       framebuffer,
       textureIndex,
-      depthRenderBuffer
+      depthRenderBuffer,
+      isFloat
     } = this.framebuffers[key]
+    if (isFloat) return
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
     gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderBuffer)
@@ -187,7 +189,8 @@ export default class Webgl {
 
     this.framebuffers[key] = {
       framebuffer,
-      textureIndex
+      textureIndex,
+      isFloat: true
     }
   }
 

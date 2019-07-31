@@ -1,4 +1,4 @@
-import Webgl from './modules/webgl'
+import './modules/kgl'
 import loadImage from './modules/loadImage'
 import { animate, cubicOut, cubicInOut } from './modules/animation'
 import { mix, clamp } from './modules/math'
@@ -65,7 +65,7 @@ loadImage([
     }
   }
 
-  const webgl = new Webgl({
+  const webgl = new Kgl({
     canvas,
     cameraPosition: [0, 0, 50],
     ambientColor: [0.2, 0.2, 0.2],
