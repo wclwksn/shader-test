@@ -13,7 +13,8 @@ export default class Planegl {
       tick,
       hasResolution = true,
       hasTime = true,
-      onResize
+      onResize,
+      isAutoStart = true
     } = option
 
     this.tick = tick
@@ -34,7 +35,7 @@ export default class Planegl {
 
     this.initSize()
 
-    this.start()
+    if (isAutoStart) this.start()
   }
 
   initWebgl (canvas) {
@@ -44,6 +45,7 @@ export default class Planegl {
       this.canvas = canvas
     } else {
       this.canvas = document.createElement('canvas')
+      this.canvas.style.display = 'block'
       this.canvas.style.width = '100%'
       this.canvas.style.height = '100%'
       document.body.appendChild(this.canvas)
